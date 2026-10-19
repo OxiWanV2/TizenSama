@@ -25,7 +25,6 @@
     refs.frame = el('iframe', 'player-frame');
     refs.frame.setAttribute('allow', 'autoplay; fullscreen; encrypted-media');
     refs.frame.setAttribute('referrerpolicy', 'no-referrer');
-    refs.frame.setAttribute('allowfullscreen', 'true');
     refs.frame.setAttribute('scrolling', 'no');
     refs.frame.setAttribute('frameborder', '0');
     refs.frame.onload = function () { if (player.active && !panelOpen) focusFrame(); };
@@ -137,6 +136,9 @@
         break;
       case 'key':
         player.handleKey(m.keyCode, !!m.repeat);
+        break;
+      case 'cursor':
+        ui.toast(m.on ? 'Mode souris · flèches pour déplacer, OK pour cliquer, bleu ou Retour pour quitter' : 'Mode souris désactivé', m.on ? 5000 : 2000);
         break;
     }
   }
@@ -381,6 +383,7 @@
     if (!player.active) return false;
     if (panelOpen) {
       if (code === K.BACK || code === K.YELLOW) { closePanel(); return true; }
+      if (code === K.BLUE) { closePanel(); send('cursor', true); return true; }
       if (code === K.UP || code === K.DOWN || code === K.LEFT || code === K.RIGHT) {
         if (!focus.move(code) && code === K.DOWN) closePanel();
         return true;
@@ -401,8 +404,11 @@
         cycleLang();
         return true;
       case K.YELLOW:
+        openPanel(panelTab);
+        return true;
       case K.BLUE:
-        openPanel(code === K.BLUE ? 'episodes' : panelTab);
+        send('cursor');
+        focusFrame();
         return true;
       case K.NEXT:
       case K.CHUP: {

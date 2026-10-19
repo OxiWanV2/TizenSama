@@ -292,6 +292,7 @@
     if (code === 79 && TS.player.active) return K.YELLOW;
     if (code === 76 && TS.player.active) return K.RED;
     if (code === 86 && TS.player.active) return K.GREEN;
+    if (code === 77 && TS.player.active) return K.BLUE;
     return code;
   }
 

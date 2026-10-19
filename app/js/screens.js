@@ -556,7 +556,7 @@
       }, true));
       box.appendChild(el('div', 'settings-group', 'À propos'));
       var generated = data.index && data.index.generated ? data.index.generated.replace('T', ' ').replace('Z', ' UTC') : '';
-      box.appendChild(el('div', 'about', 'TizenSama ' + TS.VERSION + ' · ' + util.plural(data.items.length, 'anime', 'animes') + (generated ? ' · catalogue généré le ' + generated : '') + '\nInterface pour TizenBrew. Les vidéos sont lues dans les lecteurs intégrés du catalogue, avec leurs propres commandes.\nDans le lecteur : Retour pour quitter, rouge pour changer de lecteur, vert pour la langue, jaune pour les épisodes, CH+ / CH− pour l’épisode suivant ou précédent.'));
+      box.appendChild(el('div', 'about', 'TizenSama ' + TS.VERSION + ' · ' + util.plural(data.items.length, 'anime', 'animes') + (generated ? ' · catalogue généré le ' + generated : '') + '\nInterface pour TizenBrew. Les vidéos sont lues dans les lecteurs intégrés du catalogue, avec leurs propres commandes.\nDans le lecteur : Retour pour quitter, rouge pour changer de lecteur, vert pour la langue, jaune pour les épisodes, bleu pour le mode souris (flèches, OK pour cliquer), CH+ / CH− pour l’épisode suivant ou précédent.'));
       box.lastChild.style.whiteSpace = 'pre-line';
       box.appendChild(settingRow('Quitter TizenSama', '', function () { TS.app.confirmExit(); }));
       settings.scroll.appendChild(box);

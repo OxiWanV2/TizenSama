@@ -32,7 +32,7 @@ Le lecteur affiche l'embed du site hébergeur en plein écran, sans rien par-des
 | Rouge | | Lecteur suivant (ansembed, Sibnet, Sendvid, …) |
 | Vert | | Changer de langue (VOSTFR / VF) |
 | Jaune | | Panneau Épisodes / Lecteurs / Langue |
-| Bleu | | Panneau des épisodes |
+| Bleu | | Mode souris : un curseur apparaît dans le lecteur, flèches pour le déplacer (accélère en maintenant), OK pour cliquer (fermer une pub, bouton du lecteur), bleu ou Retour pour quitter |
 | 0 à 9 | | Aller à 0 %, 10 %, … 90 % (lecteurs sans raccourcis) |
 
 Le lecteur préféré se choisit dans les réglages ou sur la fiche de l'anime. À la fin d'un épisode, le suivant démarre automatiquement (désactivable dans les réglages).
@@ -81,4 +81,4 @@ Servir le dossier `app/` avec n'importe quel serveur statique, par exemple :
 cd app && python3 -m http.server 8000
 ```
 
-puis ouvrir `http://localhost:8000/` dans Chrome. Les flèches, Entrée, Retour arrière (Retour), Espace (lecture/pause), N et P (épisode suivant/précédent), L (lecteur suivant), V (langue) et O (panneau) sont mappés au clavier. Sans TizenBrew, aucun script n'est injecté dans les iframes : une fois le focus dans le lecteur (clic), les touches ne reviennent plus à l'application, il faut recharger la page.
+puis ouvrir `http://localhost:8000/` dans Chrome. Les flèches, Entrée, Retour arrière (Retour), Espace (lecture/pause), N et P (épisode suivant/précédent), L (lecteur suivant), V (langue), O (panneau) et M (mode souris) sont mappés au clavier. Sans TizenBrew, aucun script n'est injecté dans les iframes : une fois le focus dans le lecteur (clic), les touches ne reviennent plus à l'application, il faut recharger la page.
