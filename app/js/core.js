@@ -190,7 +190,7 @@
               reject(new Error('json'));
             }
           } else {
-            reject(new Error('http ' + xhr.status));
+            reject(new Error(xhr.status ? 'http ' + xhr.status : 'réseau ou CORS'));
           }
         };
         try {

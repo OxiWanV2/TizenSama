@@ -103,12 +103,18 @@
     return { title: count > 1 || ctx.detail.seasons.length > 1 ? 'Épisode ' + ctx.ep : ctx.detail.title, sub: count > 1 || ctx.detail.seasons.length > 1 ? parts.join(' · ') : parts.slice(1).join(' · ') };
   }
 
+  function frameUrl(url) {
+    var m = /^(https:\/\/[a-z0-9.-]+)(\/e\/[a-z0-9]+)\/?$/i.exec(url);
+    return m ? m[1] + '/robots.txt#tsvoe=' + m[2] : null;
+  }
+
   function onMessage(e) {
     if (!player.active || !e.data || e.data.ns !== NS || !fromFrame(e.source)) return;
     var m = e.data;
     switch (m.type) {
       case 'ready':
         state.agent = true;
+        clearTimer('agent');
         send('meta', metaInfo());
         if (!state.video && !timers.video) {
           timers.video = setTimeout(function () {
@@ -142,6 +148,9 @@
         if (m.err) { failPlayer(); return; }
         if (state.ended && !wasEnded) onEnded();
         else if (Date.now() - lastSave > 5000 && state.t > 0) saveProgress();
+        break;
+      case 'fail':
+        failPlayer();
         break;
       case 'key':
         player.handleKey(m.keyCode, !!m.repeat);
@@ -245,7 +254,14 @@
     ctx.playerIndex = index;
     triedPlayers[index] = true;
     closePanel();
-    refs.frame.src = withAutoplay(p[1]);
+    var direct = frameUrl(p[1]);
+    refs.frame.src = direct || withAutoplay(p[1]);
+    if (direct) {
+      timers.agent = setTimeout(function () {
+        timers.agent = null;
+        if (player.active && !state.agent) refs.frame.src = withAutoplay(p[1]);
+      }, 6000);
+    }
     focusFrame();
   }
 

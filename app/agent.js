@@ -10,7 +10,7 @@
   var video = null, pendingSeek = null, lastSent = 0, startTimer = null, startAttempts = 0, started = false;
   var isOwner = window.parent === window.top;
   var cursor = { on: false, x: 0, y: 0, el: null, step: 0, lastMove: 0, hovered: null };
-  var native = false, VOE_PATH = /^\/e\/[a-z0-9]+\/?$/i, mainLoop = null;
+  var native = false, VOE_PATH = /^\/e\/[a-z0-9]+\/?$/i, VOE_HASH = /^#tsvoe=(\/e\/[a-z0-9]+)(?:&hop=(\d))?$/i, mainLoop = null;
   var ui = null, uiTimer = null, glyphTimer = null, skipTimers = {}, scrub = null, scrubCount = 0, scrubTimer = null;
   var meta = { title: '', sub: '' }, fallbackTitle = '';
   var ICON_PLAY = 'M8 5v14l11-7z', ICON_PAUSE = 'M6 5h4v14H6zm8 0h4v14h-4z', ICON_SKIP = 'M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z';
@@ -513,20 +513,46 @@
     return false;
   }
 
-  function voeProbe() {
-    if (!isOwner || !VOE_PATH.test(location.pathname)) return;
+  function voeRedirect(html) {
+    var m = /location\.href\s*=\s*['"](https:\/\/[a-z0-9.-]+)(\/e\/[a-z0-9]+)['"]/i.exec(html);
+    return m ? { origin: m[1], path: m[2] } : null;
+  }
+
+  function voeLoad(url, done) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
-      if (xhr.readyState !== 4 || xhr.status !== 200 || native) return;
-      var d = voeDecode(xhr.responseText || ''), src = d && voeSources(d);
-      if (!src) return;
-      src.title = typeof d.title === 'string' ? d.title.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[_.]+/g, ' ').replace(/^\s+|\s+$/g, '') : '';
-      voeTakeover(src);
+      if (xhr.readyState !== 4 || native) return;
+      var html = xhr.status === 200 ? xhr.responseText || '' : '';
+      var d = html ? voeDecode(html) : null, src = d && voeSources(d);
+      if (src) {
+        src.title = typeof d.title === 'string' ? d.title.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[_.]+/g, ' ').replace(/^\s+|\s+$/g, '') : '';
+        voeTakeover(src);
+        return;
+      }
+      done(html);
     };
     try {
-      xhr.open('GET', location.href, true);
+      xhr.open('GET', url, true);
       xhr.send(null);
-    } catch (e) {}
+    } catch (e) {
+      done('');
+    }
+  }
+
+  function voeProbe() {
+    if (!isOwner) return;
+    var origin = location.protocol + '//' + location.host, h = VOE_HASH.exec(location.hash);
+    if (h) {
+      var path = h[1], hop = parseInt(h[2] || '0', 10);
+      voeLoad(origin + path, function (html) {
+        var r = html ? voeRedirect(html) : null;
+        if (r && r.origin !== origin && hop < 4) location.replace(r.origin + '/robots.txt#tsvoe=' + r.path + '&hop=' + (hop + 1));
+        else if (/Tizen/i.test(navigator.userAgent)) post({ type: 'fail' });
+        else location.replace(origin + path);
+      });
+      return;
+    }
+    if (VOE_PATH.test(location.pathname)) voeLoad(location.href, function () {});
   }
 
   function block(e) {

@@ -344,7 +344,7 @@
       var msg = 'Impossible de charger le catalogue. Appuyez sur OK pour réessayer.';
       if (reason === 'mac' || reason === 'envelope' || reason === 'manifest' || reason === 'index') msg = 'Données du catalogue invalides ou code PIN obsolète. Appuyez sur OK pour réessayer.';
       if (reason === 'mac' || reason === 'locked') TS.vault.forget();
-      setStatus(msg, true);
+      setStatus(msg + ' (' + (reason || 'erreur inconnue') + ' · ' + TS.DATA.replace(/^https?:\/\//, '').split('/')[0] + ')', true);
       app.retry = loadCatalogue;
     });
   }
