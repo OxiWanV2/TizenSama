@@ -80,7 +80,7 @@
 
   var home = screens.home = makeScreen('home', { isRoot: true, title: 'Accueil' });
   (function () {
-    var hero = {}, heroItems = [], heroIndex = 0, heroTimer = null, heroToken = 0, dynamicEl, rowsEl;
+    var hero = {}, heroItems = [], heroIndex = 0, heroTimer = null, heroToken = 0, dynamicEl, rowsEl, fillTimer = null;
 
     function buildDots() {
       util.empty(hero.dots);
@@ -106,8 +106,7 @@
       for (var d = 0; d < dots.length; d++) dots[d].classList.toggle('on', d === heroIndex);
       hero.img.classList.remove('on');
       hero.thumb.classList.remove('on');
-      hero.thumb.onload = function () { if (token === heroToken) hero.thumb.classList.add('on'); };
-      hero.thumb.src = data.thumbUrl(item);
+      ui.blurInto(hero.thumb, data.thumbUrl(item), function (ok) { if (ok && token === heroToken) hero.thumb.classList.add('on'); });
       data.loadDetail(item.id).then(function (detail) {
         if (token !== heroToken) return;
         if (detail.synopsis) hero.synopsis.textContent = detail.synopsis;
@@ -153,10 +152,25 @@
 
     function buildStaticRows() {
       util.empty(rowsEl);
-      var rows = data.homeRows();
-      for (var i = 0; i < rows.length; i++) {
-        rowsEl.appendChild(ui.shelf(rows[i].title, rows[i].items.map(function (it) { return wideCard(it); })));
+      if (fillTimer) { clearTimeout(fillTimer); fillTimer = null; }
+      var rows = data.homeRows(), pending = [], i;
+      for (i = 0; i < rows.length; i++) {
+        var shelf = ui.shelf(rows[i].title, []);
+        rowsEl.appendChild(shelf);
+        pending.push({ shelf: shelf, items: rows[i].items });
       }
+      function fillOne() {
+        var next = pending.shift();
+        if (next) next.shelf._setItems(next.items.map(function (it) { return wideCard(it); }));
+      }
+      function fillLater() {
+        fillTimer = null;
+        if (!pending.length) { ui.lazy.schedule(); return; }
+        fillOne();
+        fillTimer = setTimeout(fillLater, 16);
+      }
+      for (i = 0; i < 2; i++) fillOne();
+      if (pending.length) fillTimer = setTimeout(fillLater, 16);
     }
 
     home.create = function () {
@@ -164,7 +178,9 @@
       hero.el.setAttribute('data-row', '1');
       hero.el.setAttribute('data-scroll-anchor', '1');
       hero.art = el('div', 'hero-art');
-      hero.thumb = el('img', 'hero-thumb');
+      hero.thumb = el('canvas', 'hero-thumb');
+      hero.thumb.width = 192;
+      hero.thumb.height = 84;
       hero.img = el('img', 'hero-img');
       hero.art.appendChild(hero.thumb);
       hero.art.appendChild(hero.img);
@@ -540,6 +556,17 @@
       box.appendChild(rows.autoNext);
       box.appendChild(rows.player);
       box.appendChild(el('div', 'settings-group', 'Données'));
+      if (TS.vault.locked) {
+        rows.pin = settingRow('Code PIN du catalogue', TS.vault.remembered() ? 'Mémorisé sur cette TV' : 'Redemandé au prochain lancement', function () {
+          if (!TS.vault.remembered()) { ui.toast('Le code sera redemandé au prochain lancement'); return; }
+          ui.modal.confirm('Oublier le code PIN ?', 'Le code sera redemandé au prochain lancement de TizenSama.', 'Oublier', function () {
+            TS.vault.forget();
+            rows.pin._setValue('Redemandé au prochain lancement');
+            ui.toast('Code PIN oublié');
+          }, true);
+        });
+        box.appendChild(rows.pin);
+      }
       box.appendChild(settingRow('Effacer l’historique de lecture', '', function () {
         ui.modal.confirm('Effacer l’historique ?', 'Les lectures en cours et les épisodes vus seront oubliés.', 'Effacer', function () {
           store.clearProgress();
@@ -556,7 +583,7 @@
       }, true));
       box.appendChild(el('div', 'settings-group', 'À propos'));
       var generated = data.index && data.index.generated ? data.index.generated.replace('T', ' ').replace('Z', ' UTC') : '';
-      box.appendChild(el('div', 'about', 'TizenSama ' + TS.VERSION + ' · ' + util.plural(data.items.length, 'anime', 'animes') + (generated ? ' · catalogue généré le ' + generated : '') + '\nInterface pour TizenBrew. Les vidéos sont lues dans les lecteurs intégrés du catalogue, avec leurs propres commandes.\nDans le lecteur : Retour pour quitter, rouge pour changer de lecteur, vert pour la langue, jaune pour les épisodes, bleu pour le mode souris (flèches, OK pour cliquer), CH+ / CH− pour l’épisode suivant ou précédent.'));
+      box.appendChild(el('div', 'about', 'TizenSama ' + TS.VERSION + ' · ' + util.plural(data.items.length, 'anime', 'animes') + (generated ? ' · catalogue généré le ' + generated : '') + (TS.vault.locked ? ' · données chiffrées' : '') + '\nInterface pour TizenBrew. Les vidéos sont lues dans les lecteurs intégrés du catalogue, avec leurs propres commandes.\nDans le lecteur : Retour pour quitter, rouge pour changer de lecteur, vert pour la langue, jaune pour les épisodes, bleu pour le mode souris (flèches, OK pour cliquer), CH+ / CH− pour l’épisode suivant ou précédent.'));
       box.lastChild.style.whiteSpace = 'pre-line';
       box.appendChild(settingRow('Quitter TizenSama', '', function () { TS.app.confirmExit(); }));
       settings.scroll.appendChild(box);
@@ -806,7 +833,9 @@
 
     s.create = function () {
       var backdrop = el('div', 'detail-backdrop');
-      refs.bThumb = el('img', 'd-thumb');
+      refs.bThumb = el('canvas', 'd-thumb');
+      refs.bThumb.width = 192;
+      refs.bThumb.height = 108;
       refs.bImg = el('img', 'd-img');
       backdrop.appendChild(refs.bThumb);
       backdrop.appendChild(refs.bImg);
@@ -816,10 +845,7 @@
       var loading = el('div', 'empty');
       loading.appendChild(ui.spinner());
       s.scroll.appendChild(loading);
-      if (item) {
-        refs.bThumb.onload = function () { refs.bThumb.classList.add('on'); };
-        refs.bThumb.src = data.thumbUrl(item);
-      }
+      if (item) ui.blurInto(refs.bThumb, data.thumbUrl(item), function (ok) { if (ok) refs.bThumb.classList.add('on'); });
     };
 
     s.enter = function (params, isBack) {

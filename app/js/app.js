@@ -237,6 +237,7 @@
 
   function dispatch(code, repeat, e) {
     if (!app.ready) {
+      if (TS.pin.active) return TS.pin.handleKey(code, repeat, e);
       if (code === K.ENTER && app.retry) app.retry();
       return true;
     }
@@ -320,17 +321,30 @@
 
   function loadCatalogue() {
     var status = splashEl.querySelector('.splash-status');
-    status.textContent = 'Chargement du catalogue';
-    status.classList.remove('error');
+    function setStatus(text, error) {
+      status.textContent = text;
+      status.classList.toggle('error', !!error);
+    }
+    setStatus('Chargement du catalogue');
     app.retry = null;
-    data.load().then(function () {
+    TS.vault.init().then(function (v) {
+      if (v.locked && !v.ready) {
+        setStatus('');
+        return TS.pin.ask(splashEl).then(function () { setStatus('Chargement du catalogue'); });
+      }
+    }).then(function () {
+      return data.load();
+    }).then(function () {
       app.ready = true;
       app.go('home');
       splashEl.classList.add('out');
       setTimeout(function () { if (splashEl.parentNode) splashEl.parentNode.removeChild(splashEl); }, 600);
-    }, function () {
-      status.textContent = 'Impossible de charger le catalogue. Appuyez sur OK pour réessayer.';
-      status.classList.add('error');
+    }, function (err) {
+      var reason = err && err.message ? err.message : '';
+      var msg = 'Impossible de charger le catalogue. Appuyez sur OK pour réessayer.';
+      if (reason === 'mac' || reason === 'envelope' || reason === 'manifest' || reason === 'index') msg = 'Données du catalogue invalides ou code PIN obsolète. Appuyez sur OK pour réessayer.';
+      if (reason === 'mac' || reason === 'locked') TS.vault.forget();
+      setStatus(msg, true);
       app.retry = loadCatalogue;
     });
   }

@@ -335,19 +335,80 @@
     toastTimer = setTimeout(function () { t.classList.remove('on'); }, ms || 2600);
   };
 
-  var backdropUrl = '';
+  var tmpA = null, tmpB = null;
+
+  function paintBlur(canvas, img) {
+    if (!tmpA) {
+      tmpA = document.createElement('canvas');
+      tmpB = document.createElement('canvas');
+    }
+    var cw = canvas.width, ch = canvas.height;
+    var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    if (!iw || !ih) throw new Error('image');
+    var scale = Math.max(cw / iw, ch / ih), sw = Math.min(iw, cw / scale), sh = Math.min(ih, ch / scale);
+    var src = tmpA, dst = tmpB, w = cw, h = ch, t, steps = 0;
+    src.width = w;
+    src.height = h;
+    src.getContext('2d').drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, w, h);
+    while (w > 24 && h > 12) {
+      var nw = Math.max(1, Math.round(w / 2)), nh = Math.max(1, Math.round(h / 2));
+      dst.width = nw;
+      dst.height = nh;
+      dst.getContext('2d').drawImage(src, 0, 0, w, h, 0, 0, nw, nh);
+      t = src; src = dst; dst = t;
+      w = nw; h = nh;
+      steps++;
+    }
+    while (steps-- > 0) {
+      var uw = Math.min(cw, w * 2), uh = Math.min(ch, h * 2);
+      dst.width = uw;
+      dst.height = uh;
+      dst.getContext('2d').drawImage(src, 0, 0, w, h, 0, 0, uw, uh);
+      t = src; src = dst; dst = t;
+      w = uw; h = uh;
+    }
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.drawImage(src, 0, 0, w, h, 0, 0, cw, ch);
+  }
+
+  ui.blurInto = function (canvas, url, done) {
+    if (!canvas || !url) {
+      if (done) done(false);
+      return;
+    }
+    var img = new Image();
+    img.onload = function () {
+      var ok = false;
+      try {
+        paintBlur(canvas, img);
+        ok = true;
+      } catch (e) {}
+      if (done) done(ok);
+    };
+    img.onerror = function () { if (done) done(false); };
+    img.src = url;
+  };
+
+  var backdropUrl = '', backdropIdx = 0, backdropToken = 0;
   ui.backdrop = function (url) {
-    var b = document.querySelector('#backdrop .backdrop-img');
-    if (!b) return;
+    var layers = document.querySelectorAll('#backdrop .backdrop-img');
+    if (!layers.length) return;
+    backdropToken++;
     if (!url) {
       backdropUrl = '';
-      b.classList.remove('on');
+      for (var i = 0; i < layers.length; i++) layers[i].classList.remove('on');
       return;
     }
     if (url === backdropUrl) return;
     backdropUrl = url;
-    b.style.backgroundImage = 'url("' + url + '")';
-    b.classList.add('on');
+    var token = backdropToken, nextIdx = (backdropIdx + 1) % layers.length, next = layers[nextIdx];
+    ui.blurInto(next, url, function (ok) {
+      if (!ok || token !== backdropToken) return;
+      layers[backdropIdx].classList.remove('on');
+      backdropIdx = nextIdx;
+      next.classList.add('on');
+    });
   };
   ui.backdropFor = util.debounce(function (item) {
     if (item) ui.backdrop(data.thumbUrl(item));

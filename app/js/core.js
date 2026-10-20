@@ -2,7 +2,7 @@
   'use strict';
 
   var TS = window.TS = {};
-  TS.VERSION = '1.0.0';
+  TS.VERSION = '1.1.0';
   TS.KEY = {
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, BACK: 10009, BACKSPACE: 8, ESC: 27, SPACE: 32,
     PLAYPAUSE: 10252, PLAY: 415, PAUSE: 19, STOP: 413, REWIND: 412, FF: 417, PREV: 10232, NEXT: 10233,
@@ -13,7 +13,19 @@
     var href = location.href.replace(/[?#].*$/, '');
     return href.substring(0, href.lastIndexOf('/') + 1);
   })();
-  TS.DATA = TS.BASE + 'data/';
+  TS.DATA_URL = 'https://lorenzogallo.be/json/tizen/';
+  TS.DATA = (function () {
+    var base = TS.DATA_URL;
+    if (!TS.isTV) {
+      var m = /[?&]data=([^&#]+)/.exec(location.search);
+      if (m) {
+        try { base = decodeURIComponent(m[1]); } catch (e) {}
+        if (!/^https?:\/\//i.test(base)) base = TS.BASE + base.replace(/^\.?\//, '');
+      }
+    }
+    if (base.charAt(base.length - 1) !== '/') base += '/';
+    return base;
+  })();
   TS.THUMB = 'https://cdn.jsdelivr.net/gh/Anime-Sama/IMG@img/contenu/thumb/';
   TS.TMDB = 'https://image.tmdb.org/t/p/';
   TS.LANG_LABELS = { vostfr: 'VOSTFR', vf: 'VF', vf1: 'VF 1', vf2: 'VF 2', va: 'VA', vj: 'VJ', vkr: 'VKR', vcn: 'VCN', vqc: 'VQC', 'var': 'VAR' };
@@ -203,18 +215,28 @@
     }
   };
 
+  var cache = {};
   var store = TS.store = {
     key: function (k) { return 'tizensama.' + k; },
     read: function (k, def) {
+      if (cache.hasOwnProperty(k)) return cache[k] === undefined ? def : cache[k];
+      var val;
       try {
         var raw = localStorage.getItem(this.key(k));
-        return raw ? JSON.parse(raw) : def;
+        val = raw ? JSON.parse(raw) : undefined;
       } catch (e) {
-        return def;
+        val = undefined;
       }
+      cache[k] = val;
+      return val === undefined ? def : val;
     },
     write: function (k, val) {
+      cache[k] = val;
       try { localStorage.setItem(this.key(k), JSON.stringify(val)); } catch (e) {}
+    },
+    remove: function (k) {
+      cache[k] = undefined;
+      try { localStorage.removeItem(this.key(k)); } catch (e) {}
     },
     defaults: { lang: 'vostfr', autoNext: true, player: '' },
     settings: function () {

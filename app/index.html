@@ -9,7 +9,7 @@
 </head>
 <body>
 <div id="app">
-  <div id="backdrop" class="backdrop"><div class="backdrop-img"></div><div class="backdrop-tint"></div></div>
+  <div id="backdrop" class="backdrop"><canvas class="backdrop-img" width="192" height="108"></canvas><canvas class="backdrop-img" width="192" height="108"></canvas><div class="backdrop-tint"></div></div>
   <div id="screens"></div>
   <nav id="tabbar" class="tabbar"><div class="tabbar-pill"></div></nav>
   <div id="modal-layer"></div>
@@ -21,9 +21,12 @@
   </div>
 </div>
 <script src="js/core.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/vault.js"></script>
 <script src="js/data.js"></script>
 <script src="js/focus.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/pin.js"></script>
 <script src="js/screens.js"></script>
 <script src="js/player.js"></script>
 <script src="js/app.js"></script>

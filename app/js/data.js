@@ -19,7 +19,9 @@
   };
 
   data.load = function () {
-    return util.fetchJSON(TS.DATA + 'index.json', 40000).then(function (index) {
+    return TS.vault.fetch('index.json', 40000).then(function (index) {
+      if (!index || !index.items) throw new Error('index');
+      data.counts = null;
       data.index = index;
       data.items = index.items || [];
       data.genres = index.genres || [];
@@ -198,8 +200,8 @@
 
   data.similar = function (item, limit) {
     if (!item || !item.g || !item.g.length) return [];
-    var weights = {};
-    for (var k = 0; k < item.g.length; k++) weights[item.g[k]] = 1 / Math.log(2 + data.byGenre(data.genres[item.g[k]]).length);
+    var weights = {}, counts = data.genreCounts();
+    for (var k = 0; k < item.g.length; k++) weights[item.g[k]] = 1 / Math.log(2 + (counts[item.g[k]] || 0));
     var scored = [];
     for (var i = 0; i < data.items.length; i++) {
       var other = data.items[i];
@@ -232,18 +234,20 @@
   };
 
   data.genreCounts = function () {
+    if (data.counts) return data.counts;
     var counts = [];
     for (var i = 0; i < data.genres.length; i++) counts.push(0);
     for (var j = 0; j < data.items.length; j++) {
       var g = data.items[j].g;
       for (var k = 0; k < g.length; k++) counts[g[k]]++;
     }
+    data.counts = counts;
     return counts;
   };
 
   data.loadSearch = function () {
     if (data.searchIndex) return Promise.resolve(data.searchIndex);
-    return util.fetchJSON(TS.DATA + 'search.json', 40000).then(function (list) {
+    return TS.vault.fetch('search.json', 40000).then(function (list) {
       data.searchIndex = list;
       return list;
     });
@@ -280,7 +284,7 @@
 
   data.loadDetail = function (slug) {
     if (data.detailCache[slug]) return Promise.resolve(data.detailCache[slug]);
-    return util.fetchJSON(TS.DATA + 'anime/' + encodeURIComponent(slug) + '.json', 30000).then(function (detail) {
+    return TS.vault.fetch('anime/' + slug + '.json', 30000).then(function (detail) {
       data.detailCache[slug] = detail;
       data.detailOrder.push(slug);
       if (data.detailOrder.length > 40) delete data.detailCache[data.detailOrder.shift()];

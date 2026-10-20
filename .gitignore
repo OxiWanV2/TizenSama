@@ -2,3 +2,8 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+*.json
+!package.json
+app/data/
+dist/
+catalogue.json
