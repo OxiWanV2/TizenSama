@@ -282,9 +282,26 @@
     return scored.slice(0, limit || 60).map(function (e) { return e.it; });
   };
 
+  var DEAD_HOSTS = /^https?:\/\/([a-z0-9-]+\.)*(oneupload\.to|sibnet\.ru|movearnpre\.com|mivalyo\.com|uptostream\.com|morencius\.com)(\/|$)/i;
+
+  function dropDeadPlayers(detail) {
+    for (var s = 0; s < detail.seasons.length; s++) {
+      var langs = detail.seasons[s].langs;
+      for (var code in langs) {
+        if (!langs.hasOwnProperty(code)) continue;
+        var eps = langs[code].episodes;
+        for (var e = 0; e < eps.length; e++) {
+          eps[e] = eps[e].filter(function (p) { return !DEAD_HOSTS.test(p[1]); });
+        }
+      }
+    }
+    return detail;
+  }
+
   data.loadDetail = function (slug) {
     if (data.detailCache[slug]) return Promise.resolve(data.detailCache[slug]);
     return TS.vault.fetch('anime/' + slug + '.json', 30000).then(function (detail) {
+      dropDeadPlayers(detail);
       data.detailCache[slug] = detail;
       data.detailOrder.push(slug);
       if (data.detailOrder.length > 40) delete data.detailCache[data.detailOrder.shift()];
@@ -311,7 +328,7 @@
     return /^https:\/\/[a-z0-9.-]+\/e\/[a-z0-9]+\/?$/i.test(url || '');
   };
 
-  var NAS_HOSTS = /^https?:\/\/([a-z0-9-]+\.)*(ansembed\.net|uqload\.[a-z]+|minochinos\.com|dingtezuni\.com|bingezove\.com|callistanise\.com|smoothpre\.com|yourupload\.com|sendvid\.com)(\/|$)/i;
+  var NAS_HOSTS = /^https?:\/\/([a-z0-9-]+\.)*(ansembed\.net|uqload\.[a-z]+|minochinos\.com|dingtezuni\.com|bingezove\.com|callistanise\.com|smoothpre\.com|yourupload\.com|sendvid\.com|vk\.com|vkvideo\.ru|vk\.ru)(\/|$)/i;
 
   var VOE_NAMES = /^(voe\.sx|derricknationtop|teresapoliticallearn|megankiddifference|jeremyparticipantanything|claireguessthousand|jamesbornmain)(\.|$)/i;
   var PLAYER_LABELS = { 'ansembed.net': 'ansembed', 'www.yourupload.com': 'YourUpload', 'video.sibnet.ru': 'Sibnet', 'lpayer.embed4me.com': 'Embed4me' };
@@ -351,6 +368,6 @@
   };
 
   data.playerNames = function () {
-    return ['ansembed.net', 'Sibnet', 'Sendvid', 'Uqload', 'Embed4me', 'Earnvids', 'OneUpload', 'VK'];
+    return ['ansembed.net', 'Sendvid', 'Uqload', 'Embed4me', 'Earnvids', 'VK'];
   };
 })(window);

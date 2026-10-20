@@ -92,7 +92,7 @@ CANON = {
 
 DROP_GENRES = {"Science", "Post", "Super", "Aliens / Extra", "terrestres", "apocalyptique", "héros", "Ping", "pong", "E", "sport", "Monster", "Girl", "Homme", "Bête", "mécaniques", "inversé", ""}
 
-NON_EMBEDDABLE_HOSTS = ("animationdigitalnetwork",)
+NON_EMBEDDABLE_HOSTS = ("animationdigitalnetwork", "oneupload.to", "sibnet.ru", "movearnpre.com", "mivalyo.com", "uptostream.com", "morencius.com")
 GENERIC_SEGMENTS = {"embed", "e", "iframe", "video", "videoembed", "v", "player", "watch"}
 
 
