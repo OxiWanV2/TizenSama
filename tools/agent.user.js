@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TizenSama agent
 // @namespace    tizensama
-// @version      1.3.0
+// @version      1.3.1
 // @description  Injecte l'agent TizenSama dans les iframes des lecteurs, comme TizenBrew sur la TV
 // @match        *://*/*
 // @run-at       document-start
@@ -273,6 +273,7 @@
         if (q > best) { mp4 = f.file; best = q; }
       }
     }
+    if (!mp4 && typeof d.direct_access_url === 'string' && /^https?:\/\//.test(d.direct_access_url)) mp4 = d.direct_access_url;
     var src = d.source;
     if (typeof src === 'string' && src) {
       if (!/^https?:\/\//.test(src)) { try { src = atob(src); } catch (e) { src = ''; } }
