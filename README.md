@@ -23,11 +23,12 @@ TizenBrew charge `package.json`, `app/index.html` et `app/agent.js` depuis jsDel
 Publier une version :
 
 1. Mettre le même numéro dans `release` (`app/index.html`), `TS.VERSION` (`app/js/core.js`) et `version` (`package.json`).
-2. Commiter, créer le tag (`git tag v1.4.1`), puis pousser la branche et le tag (`git push origin main --tags`).
-3. Purger une seule fois `index.html` et `package.json` (et `agent.js` s'il a changé) :
+2. Commiter, créer le tag (`git tag v1.4.2`) et le pousser (`git push origin main v1.4.2`).
+3. Dans `package.json`, faire pointer `websiteURL` sur ce tag (`…TizenSama%40v1.4.2/app/index.html`), commiter et pousser. `package.json` est ainsi le seul fichier variable : l'application entière, `index.html` compris, vient du tag immuable.
+4. Purger une seule fois `package.json` (et `agent.js` s'il a changé), puis redémarrer la TV à froid pour que TizenBrew relise le module :
 
 ```
-for f in package.json app/index.html app/agent.js; do curl -s -o /dev/null "https://purge.jsdelivr.net/gh/OxiWanV2/TizenSama@main/$f"; done
+for f in package.json app/agent.js; do curl -s -o /dev/null "https://purge.jsdelivr.net/gh/OxiWanV2/TizenSama@main/$f"; done
 ```
 
 Le service TizenBrew garde aussi le script `app/agent.js` en mémoire jusqu'à son redémarrage : après une modification de ce fichier, redémarrer la TV à froid. Si le dépôt est renommé ou forké, adapter `websiteURL` dans `package.json` (le nom du module y est encodé : `gh%2FUtilisateur%2FDepot%40main`).
