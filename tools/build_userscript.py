@@ -4,7 +4,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HEADER = """// ==UserScript==
 // @name         TizenSama agent
 // @namespace    tizensama
-// @version      1.2.1
+// @version      1.2.2
 // @description  Injecte l'agent TizenSama dans les iframes des lecteurs, comme TizenBrew sur la TV
 // @match        *://*/*
 // @run-at       document-start

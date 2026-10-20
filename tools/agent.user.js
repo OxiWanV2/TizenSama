@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TizenSama agent
 // @namespace    tizensama
-// @version      1.2.1
+// @version      1.2.2
 // @description  Injecte l'agent TizenSama dans les iframes des lecteurs, comme TizenBrew sur la TV
 // @match        *://*/*
 // @run-at       document-start
@@ -381,6 +381,21 @@
     ui.skipR = node('div', 'ts-round ts-skip r', root);
     ui.skipL.innerHTML = ui.skipR.innerHTML = svgIcon(ICON_SKIP) + '<span>10</span>';
     node('div', 'ts-spin', root);
+    var announced = {};
+    function once(key, text) {
+      if (announced[key]) return;
+      announced[key] = true;
+      diag(text);
+    }
+    v.addEventListener('error', function () {
+      var code = v.error ? v.error.code : 0, kind = /\.m3u8/i.test(v.currentSrc || v.src || '') ? 'HLS' : 'mp4';
+      diag('Vidéo · erreur ' + code + ' en ' + kind + (v._alt ? ', essai HLS' : ''));
+    });
+    v.addEventListener('loadedmetadata', function () { once('meta', 'Vidéo · ' + (v.videoWidth || '?') + '×' + (v.videoHeight || '?') + ' · ' + fmt(v.duration)); });
+    v.addEventListener('playing', function () { once('play', 'Vidéo · lecture en cours'); });
+    setTimeout(function () {
+      if (v.readyState === 0 && !v.error) diag('Vidéo · aucune donnée après 15 s (réseau ' + v.networkState + ')');
+    }, 15000);
     v.addEventListener('pause', function () { uiShow(true); uiUpdate(); });
     v.addEventListener('ended', function () { uiShow(true); uiUpdate(); });
     v.addEventListener('play', function () { uiShow(); });
@@ -523,6 +538,13 @@
     return false;
   }
 
+  var lastDiag = '';
+
+  function diag(text) {
+    lastDiag = text;
+    post({ type: 'diag', text: text });
+  }
+
   function voeRedirect(html) {
     var m = /location\.href\s*=\s*['"](https:\/\/[a-z0-9.-]+)(\/e\/[a-z0-9]+)['"]/i.exec(html);
     return m ? { origin: m[1], path: m[2] } : null;
@@ -533,8 +555,11 @@
     xhr.onreadystatechange = function () {
       if (xhr.readyState !== 4 || native) return;
       var html = xhr.status === 200 ? xhr.responseText || '' : '';
+      diag('VOE · page HTTP ' + xhr.status + ' · ' + Math.round(html.length / 1024) + ' Ko');
       var d = html ? voeDecode(html) : null, src = d && voeSources(d);
+      if (html && !src) diag(/<script type="application\/json">/.test(html) ? 'VOE · flux présent mais non décodé' : 'VOE · pas de flux dans la page');
       if (src) {
+        diag('VOE · flux trouvé' + (src.mp4 ? ' mp4' : '') + (src.hls ? ' hls' : ''));
         src.title = typeof d.title === 'string' ? d.title.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[_.]+/g, ' ').replace(/^\s+|\s+$/g, '') : '';
         voeTakeover(src);
         return;
@@ -545,6 +570,7 @@
       xhr.open('GET', url, true);
       xhr.send(null);
     } catch (e) {
+      diag('VOE · requête impossible · ' + (e && e.message ? e.message : e));
       done('');
     }
   }
@@ -554,10 +580,13 @@
     var origin = location.protocol + '//' + location.host, h = VOE_HASH.exec(location.hash);
     if (h) {
       var path = h[1], hop = parseInt(h[2] || '0', 10);
+      diag('VOE · lecture de la page sur ' + location.host);
       voeLoad(origin + path, function (html) {
         var r = html ? voeRedirect(html) : null;
-        if (r && r.origin !== origin && hop < 4) location.replace(r.origin + '/robots.txt#tsvoe=' + r.path + '&hop=' + (hop + 1));
-        else if (/Tizen/i.test(navigator.userAgent)) post({ type: 'fail' });
+        if (r && r.origin !== origin && hop < 4) {
+          diag('VOE · redirection vers ' + r.origin.replace(/^https:\/\//, ''));
+          location.replace(r.origin + '/robots.txt#tsvoe=' + r.path + '&hop=' + (hop + 1));
+        } else if (/Tizen/i.test(navigator.userAgent)) post({ type: 'fail', reason: lastDiag });
         else location.replace(origin + path);
       });
       return;

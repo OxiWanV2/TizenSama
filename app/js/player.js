@@ -6,7 +6,7 @@
   var AUTOPLAY_HOSTS = ['vk.com', 'vkvideo.ru', 'youtube.com', 'dailymotion.com', 'ok.ru'];
 
   var player = TS.player = { active: false, built: false, ctx: null, el: null };
-  var refs = {}, state, timers = {}, videoSource = null, panelOpen = false, panelTab = 'episodes', triedPlayers = {}, lastSave = 0;
+  var refs = {}, state, timers = {}, videoSource = null, panelOpen = false, panelTab = 'episodes', triedPlayers = {}, lastSave = 0, lastDiag = '';
 
   function freshState() {
     return { agent: false, video: false, t: 0, d: 0, ended: false, paused: true, resume: 0 };
@@ -149,7 +149,12 @@
         if (state.ended && !wasEnded) onEnded();
         else if (Date.now() - lastSave > 5000 && state.t > 0) saveProgress();
         break;
+      case 'diag':
+        lastDiag = String(m.text || '').slice(0, 160);
+        if (lastDiag) ui.toast(lastDiag, 6000);
+        break;
       case 'fail':
+        if (m.reason) lastDiag = String(m.reason).slice(0, 160);
         failPlayer();
         break;
       case 'key':
@@ -220,8 +225,11 @@
       var idx = (ctx.playerIndex + i) % ctx.players.length;
       if (!triedPlayers[idx]) { nextIndex = idx; break; }
     }
-    if (nextIndex < 0) return;
-    ui.toast('Lecteur ' + (currentPlayer() ? currentPlayer()[0] : '') + ' indisponible · passage à ' + ctx.players[nextIndex][0], 3500);
+    if (nextIndex < 0) {
+      if (lastDiag) ui.toast('Lecteur indisponible (' + lastDiag + ')', 9000);
+      return;
+    }
+    ui.toast('Lecteur ' + (currentPlayer() ? currentPlayer()[0] : '') + ' indisponible' + (lastDiag ? ' (' + lastDiag + ')' : '') + ' · passage à ' + ctx.players[nextIndex][0], lastDiag ? 9000 : 3500);
     loadPlayer(nextIndex);
   }
 
@@ -254,6 +262,7 @@
     ctx.playerIndex = index;
     triedPlayers[index] = true;
     closePanel();
+    lastDiag = '';
     var direct = frameUrl(p[1]);
     refs.frame.src = direct || withAutoplay(p[1]);
     if (direct) {
