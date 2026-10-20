@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TizenSama agent
 // @namespace    tizensama
-// @version      1.2.0
+// @version      1.2.1
 // @description  Injecte l'agent TizenSama dans les iframes des lecteurs, comme TizenBrew sur la TV
 // @match        *://*/*
 // @run-at       document-start
