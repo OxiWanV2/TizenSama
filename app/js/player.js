@@ -237,7 +237,7 @@
       if (lastDiag) ui.toast('Lecteur indisponible (' + lastDiag + ')', 9000);
       return;
     }
-    ui.toast('Lecteur ' + (currentPlayer() ? currentPlayer()[0] : '') + ' indisponible' + (lastDiag ? ' (' + lastDiag + ')' : '') + ' · passage à ' + ctx.players[nextIndex][0], lastDiag ? 9000 : 3500);
+    ui.toast('Lecteur ' + (currentPlayer() ? data.playerLabel(currentPlayer()[0], currentPlayer()[1]) : '') + ' indisponible' + (lastDiag ? ' (' + lastDiag + ')' : '') + ' · passage à ' + data.playerLabel(ctx.players[nextIndex][0], ctx.players[nextIndex][1]), lastDiag ? 9000 : 3500);
     loadPlayer(nextIndex);
   }
 
@@ -383,7 +383,7 @@
     var ctx = player.ctx;
     if (ctx.players.length < 2) { ui.toast('Un seul lecteur disponible'); return; }
     var index = (ctx.playerIndex + delta + ctx.players.length) % ctx.players.length;
-    ui.toast('Lecteur ' + (index + 1) + '/' + ctx.players.length + ' · ' + ctx.players[index][0] + ' · retenu pour cet anime');
+    ui.toast('Lecteur ' + (index + 1) + '/' + ctx.players.length + ' · ' + data.playerLabel(ctx.players[index][0], ctx.players[index][1]) + ' · retenu pour cet anime');
     store.setAnimePlayer(ctx.slug, ctx.players[index][0]);
     loadPlayer(index);
   }
@@ -444,7 +444,7 @@
     } else if (tab === 'players') {
       var opts = el('div', 'panel-options');
       ctx.players.forEach(function (p, idx) {
-        var b = ui.button(p[0], { icon: idx === ctx.playerIndex ? 'check' : 'screen', primary: idx === ctx.playerIndex, onSelect: function () {
+        var b = ui.button(data.playerLabel(p[0], p[1]), { icon: idx === ctx.playerIndex ? 'check' : 'screen', primary: idx === ctx.playerIndex, onSelect: function () {
           if (idx !== ctx.playerIndex) {
             store.setAnimePlayer(ctx.slug, p[0]);
             loadPlayer(idx);

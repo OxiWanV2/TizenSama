@@ -313,6 +313,19 @@
 
   var NAS_HOSTS = /^https?:\/\/([a-z0-9-]+\.)*(ansembed\.net|uqload\.[a-z]+|minochinos\.com|dingtezuni\.com|bingezove\.com|callistanise\.com|smoothpre\.com|yourupload\.com|sendvid\.com)(\/|$)/i;
 
+  var VOE_NAMES = /^(voe\.sx|derricknationtop|teresapoliticallearn|megankiddifference|jeremyparticipantanything|claireguessthousand|jamesbornmain)(\.|$)/i;
+  var PLAYER_LABELS = { 'ansembed.net': 'ansembed', 'www.yourupload.com': 'YourUpload', 'video.sibnet.ru': 'Sibnet', 'lpayer.embed4me.com': 'Embed4me' };
+
+  data.playerLabel = function (name, url) {
+    if (!name) return 'Automatique';
+    if ((url && data.isVoe(url)) || VOE_NAMES.test(name)) return 'VOE';
+    if (PLAYER_LABELS[name]) return PLAYER_LABELS[name];
+    var m = /^(?:www\.)?([a-z0-9-]+)\.[a-z.]+$/i.exec(name);
+    if (!m) return name;
+    var base = m[1];
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  };
+
   data.nasEnabled = function () {
     return !!TS.NAS_URL && TS.store.settings().nas !== false;
   };

@@ -522,7 +522,7 @@
     }
 
     function langLabel(code) { return code === 'vf' ? 'Français (VF)' : 'Sous-titré (VOSTFR)'; }
-    function playerLabel(name) { return name || 'Automatique'; }
+    function playerLabel(name) { return data.playerLabel(name); }
 
     settings.create = function () {
       var box = el('div', 'settings');
@@ -719,6 +719,8 @@
       buildEpisodes();
     }
 
+    var urls = {};
+
     function availablePlayers() {
       var names = [];
       for (var s = 0; s < detail.seasons.length; s++) {
@@ -727,22 +729,31 @@
           if (!langs.hasOwnProperty(code)) continue;
           var eps = langs[code].episodes;
           for (var e = 0; e < eps.length; e++) {
-            for (var p = 0; p < eps[e].length; p++) if (names.indexOf(eps[e][p][0]) === -1) names.push(eps[e][p][0]);
+            for (var p = 0; p < eps[e].length; p++) {
+              if (names.indexOf(eps[e][p][0]) === -1) { names.push(eps[e][p][0]); urls[eps[e][p][0]] = eps[e][p][1]; }
+            }
           }
         }
       }
       return names;
     }
 
+    function shortLabel(n) {
+      return n ? data.playerLabel(n, urls[n]) : 'Auto';
+    }
+
     function choosePlayer() {
-      var names = [''].concat(availablePlayers()), cur = store.animePlayer(slug);
+      var names = [''].concat(availablePlayers()), cur = store.animePlayer(slug), seen = {};
       ui.modal.open({
         title: 'Lecteur pour cet anime',
         text: 'Essayé en premier pour cet anime quand il est disponible. Automatique : lecteurs VOE d’abord, puis le lecteur préféré des réglages. Touche rouge dans le lecteur pour en changer.',
         items: names.map(function (n) {
-          return { label: n || 'Automatique', selected: n === cur, handler: function () {
+          var label = n ? data.playerLabel(n, urls[n]) : 'Automatique';
+          if (seen[label]) label += ' · ' + n.replace(/^www\./, '').split('.')[0];
+          seen[label] = true;
+          return { label: label, selected: n === cur, handler: function () {
             store.setAnimePlayer(slug, n);
-            refs.playerBtn._setValue(n || 'Auto');
+            refs.playerBtn._setValue(shortLabel(n));
           } };
         }),
         selectedIndex: Math.max(0, names.indexOf(cur))
@@ -792,7 +803,7 @@
         TS.app.notify('favorites');
       } });
       refs.langBtn = ui.button('VOSTFR', { icon: 'globe', onSelect: cycleLang });
-      refs.playerBtn = ui.button('Lecteur', { icon: 'screen', value: store.animePlayer(slug) || 'Auto', onSelect: choosePlayer });
+      refs.playerBtn = ui.button('Lecteur', { icon: 'screen', value: shortLabel(store.animePlayer(slug)), onSelect: choosePlayer });
       actions.appendChild(refs.play);
       actions.appendChild(refs.fav);
       actions.appendChild(refs.langBtn);
@@ -802,7 +813,7 @@
       s.scroll.appendChild(head);
 
       if (detail.seasons.length > 1) {
-        var seasonsSection = el('section', 'detail-section');
+        var seasonsSection = el('section', 'detail-section seasons');
         seasonsSection.setAttribute('data-row', '1');
         seasonsSection.setAttribute('data-scroll-anchor', '1');
         refs.seasons = ui.segmented(detail.seasons.map(function (se) { return se.name; }), seasonIndex, function (i) {
@@ -911,7 +922,7 @@
       buildEpisodes(focusedIndex >= 0 ? focusedIndex : undefined);
       updatePlayButton();
       updateFavButton();
-      if (refs.playerBtn) refs.playerBtn._setValue(store.animePlayer(slug) || 'Auto');
+      if (refs.playerBtn) refs.playerBtn._setValue(shortLabel(store.animePlayer(slug)));
     };
 
     s.destroy = function () {
