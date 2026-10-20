@@ -96,12 +96,20 @@
     return url;
   }
 
+  function metaInfo() {
+    var ctx = player.ctx, season = seasonOf(ctx), count = episodeCount(ctx), parts = [ctx.detail.title];
+    if (ctx.detail.seasons.length > 1 && season.name) parts.push(season.name);
+    parts.push(data.langLabel(ctx.lang));
+    return { title: count > 1 || ctx.detail.seasons.length > 1 ? 'Épisode ' + ctx.ep : ctx.detail.title, sub: count > 1 || ctx.detail.seasons.length > 1 ? parts.join(' · ') : parts.slice(1).join(' · ') };
+  }
+
   function onMessage(e) {
     if (!player.active || !e.data || e.data.ns !== NS || !fromFrame(e.source)) return;
     var m = e.data;
     switch (m.type) {
       case 'ready':
         state.agent = true;
+        send('meta', metaInfo());
         if (!state.video && !timers.video) {
           timers.video = setTimeout(function () {
             timers.video = null;
@@ -113,6 +121,7 @@
         videoSource = e.source;
         clearTimer('video');
         state.agent = true;
+        send('meta', metaInfo());
         if (!state.video) {
           state.video = true;
           if (state.resume > 0) send('seek', state.resume);

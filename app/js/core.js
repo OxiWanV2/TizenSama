@@ -2,7 +2,7 @@
   'use strict';
 
   var TS = window.TS = {};
-  TS.VERSION = '1.1.0';
+  TS.VERSION = '1.2.0';
   TS.KEY = {
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, BACK: 10009, BACKSPACE: 8, ESC: 27, SPACE: 32,
     PLAYPAUSE: 10252, PLAY: 415, PAUSE: 19, STOP: 413, REWIND: 412, FF: 417, PREV: 10232, NEXT: 10233,
@@ -13,7 +13,7 @@
     var href = location.href.replace(/[?#].*$/, '');
     return href.substring(0, href.lastIndexOf('/') + 1);
   })();
-  TS.DATA_URL = 'https://lorenzogallo.be/json/tizen/';
+  TS.DATA_URL = 'http://192.168.0.79:1203/json/tizen/';
   TS.DATA = (function () {
     var base = TS.DATA_URL;
     if (!TS.isTV) {
