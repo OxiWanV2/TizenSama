@@ -100,7 +100,7 @@
       hero.title.textContent = item.t;
       util.empty(hero.meta);
       hero.meta.appendChild(ui.meta(data.metaLine(item), item.l.map(data.langLabel)));
-      hero.synopsis.textContent = data.genreNames(item, 4).join(' · ');
+      hero.synopsis._setText(data.genreNames(item, 4).join(' · '));
       updatePlayLabel(item);
       var dots = hero.dots.children;
       for (var d = 0; d < dots.length; d++) dots[d].classList.toggle('on', d === heroIndex);
@@ -109,7 +109,7 @@
       ui.blurInto(hero.thumb, data.thumbUrl(item), function (ok) { if (ok && token === heroToken) hero.thumb.classList.add('on'); });
       data.loadDetail(item.id).then(function (detail) {
         if (token !== heroToken) return;
-        if (detail.synopsis) hero.synopsis.textContent = detail.synopsis;
+        if (detail.synopsis) hero.synopsis._setText(detail.synopsis);
         hero.img.onload = function () { if (token === heroToken) hero.img.classList.add('on'); };
         hero.img.onerror = function () {};
         hero.img.src = detail.image;
@@ -191,7 +191,7 @@
       hero.kicker = el('div', 'hero-kicker');
       hero.title = el('h1', 'hero-title');
       hero.meta = el('div', 'hero-meta');
-      hero.synopsis = el('p', 'hero-synopsis');
+      hero.synopsis = ui.textScroll(el('p', 'hero-synopsis'), 3);
       hero.actions = el('div', 'hero-actions');
       hero.play = ui.button('Lire', { icon: 'play', primary: true, onSelect: function () {
         var it = heroItems[heroIndex];
@@ -561,6 +561,13 @@
         ui.toast(next ? 'VOE, ansembed, Uqload et compatibles lus via ' + TS.NAS_URL.replace(/^https?:\/\//, '') : 'Lecteurs intégrés uniquement');
       });
       box.appendChild(rows.nas);
+      rows.textScroll = settingRow('Défilement des synopsis', s.textScroll !== false ? 'Oui' : 'Non', function () {
+        var next = store.settings().textScroll === false;
+        store.setSetting('textScroll', next);
+        rows.textScroll._setValue(next ? 'Oui' : 'Non');
+        ui.textScroll.refresh();
+      });
+      box.appendChild(rows.textScroll);
       box.appendChild(rows.player);
       box.appendChild(el('div', 'settings-group', 'Données'));
       if (TS.vault.locked) {
@@ -600,6 +607,7 @@
       var s = store.settings();
       if (rows.lang) rows.lang._setValue(langLabel(s.lang));
       if (rows.autoNext) rows.autoNext._setValue(s.autoNext ? 'Oui' : 'Non');
+      if (rows.textScroll) rows.textScroll._setValue(s.textScroll !== false ? 'Oui' : 'Non');
       if (rows.player) rows.player._setValue(playerLabel(s.player));
     };
   })();
@@ -771,7 +779,7 @@
       meta.appendChild(ui.meta(metaParts, detail.langs.map(data.langLabel)));
       info.appendChild(meta);
       if (detail.genres.length) info.appendChild(el('div', 'detail-genres', detail.genres.join(' · ')));
-      var synopsis = el('p', 'detail-synopsis', detail.synopsis || 'Aucun synopsis disponible.');
+      var synopsis = ui.textScroll(el('p', 'detail-synopsis', detail.synopsis || 'Aucun synopsis disponible.'), 4);
       info.appendChild(synopsis);
       var actions = el('div', 'detail-actions');
       refs.play = ui.button('Lire', { icon: 'play', primary: true, onSelect: function () {
@@ -789,13 +797,6 @@
       actions.appendChild(refs.fav);
       actions.appendChild(refs.langBtn);
       actions.appendChild(refs.playerBtn);
-      if ((detail.synopsis || '').length > 300) {
-        var more = ui.button('Lire la suite', { small: true, onSelect: function () {
-          var expanded = synopsis.classList.toggle('expanded');
-          more._setLabel(expanded ? 'Réduire' : 'Lire la suite');
-        } });
-        actions.appendChild(more);
-      }
       info.appendChild(actions);
       head.appendChild(info);
       s.scroll.appendChild(head);

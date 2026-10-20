@@ -149,8 +149,6 @@
 
   ui.segmented = function (labels, selected, onChange) {
     var wrap = el('div', 'segmented');
-    wrap.style.maxWidth = '174rem';
-    wrap.style.overflow = 'hidden';
     var track = el('div', 'seg-track');
     wrap.appendChild(track);
     var segs = [];
@@ -172,7 +170,7 @@
     wrap._segs = segs;
     wrap._track = track;
     wrap._select = setSel;
-    wrap._viewport = function () { return wrap.clientWidth - 1.2 * util.rem(); };
+    wrap._viewport = function () { return wrap.clientWidth - 1.6 * util.rem(); };
     bindHScroll(wrap);
     return wrap;
   };
@@ -328,6 +326,90 @@
 
   document.addEventListener('tsfocus', function () { lazy.schedule(); });
 
+  var scrollers = [];
+
+  ui.textScroll = function (node, lines) {
+    var inner = el('div', 'tscroll-inner');
+    while (node.firstChild) inner.appendChild(node.firstChild);
+    node.classList.add('tscroll');
+    node.appendChild(inner);
+    inner.style.webkitLineClamp = String(lines || 3);
+    var timer = null, gen = 0;
+
+    function setY(y, ms) {
+      var t = ms ? 'transform ' + ms + 'ms linear' : 'none';
+      inner.style.webkitTransition = ms ? '-webkit-' + t : 'none';
+      inner.style.transition = t;
+      inner.style.webkitTransform = inner.style.transform = 'translate3d(0,' + (-y) + 'px,0)';
+    }
+
+    function enabled() {
+      return TS.store.settings().textScroll !== false;
+    }
+
+    function stop() {
+      gen++;
+      if (timer) { clearTimeout(timer); timer = null; }
+      inner.style.opacity = '1';
+      setY(0, 0);
+      node.classList.remove('more');
+    }
+
+    function later(fn, ms) {
+      var g = gen;
+      timer = setTimeout(function () {
+        timer = null;
+        if (g !== gen || !util.contains(document.body, node)) return;
+        if (!enabled()) { node.classList.add('clamped'); return; }
+        fn();
+      }, ms);
+    }
+
+    function run() {
+      if (!node.clientHeight) { later(run, 2000); return; }
+      var max = inner.scrollHeight - node.clientHeight;
+      if (max <= 4) { node.classList.remove('more'); later(run, 4000); return; }
+      node.classList.add('more');
+      var lh = parseFloat(getComputedStyle(node).lineHeight) || 36, ms = Math.round(max / lh * 2600);
+      later(function () {
+        setY(max, ms);
+        later(function () {
+          node.classList.remove('more');
+          later(function () {
+            inner.style.webkitTransition = inner.style.transition = 'opacity .4s ease';
+            inner.style.opacity = '0';
+            later(function () {
+              setY(0, 0);
+              inner.style.opacity = '1';
+              later(run, 300);
+            }, 450);
+          }, 4000);
+        }, ms + 100);
+      }, 4000);
+    }
+
+    function restart() {
+      stop();
+      if (!enabled()) { node.classList.add('clamped'); return; }
+      node.classList.remove('clamped');
+      run();
+    }
+
+    node._setText = function (t) {
+      inner.textContent = t;
+      restart();
+    };
+    node._restart = restart;
+    scrollers.push({ node: node, restart: restart });
+    restart();
+    return node;
+  };
+
+  ui.textScroll.refresh = function () {
+    scrollers = scrollers.filter(function (s) { return util.contains(document.body, s.node); });
+    for (var i = 0; i < scrollers.length; i++) scrollers[i].restart();
+  };
+
   var toastTimer = null;
   ui.toast = function (msg, ms) {
     var t = document.getElementById('toast');
@@ -451,10 +533,10 @@
     modal.opts = o;
     var y = 0;
     m.addEventListener('tsfocus', function (e) {
-      var row = e.detail.el, top = row.offsetTop, h = row.offsetHeight, vh = list.clientHeight;
+      var row = e.detail.el, top = util.offsetTopWithin(row, track), h = row.offsetHeight, vh = list.clientHeight;
       if (top < y) y = top;
       else if (top + h > y + vh) y = top + h - vh;
-      y = Math.max(0, y);
+      y = Math.max(0, Math.min(y, track.offsetHeight - vh));
       track.style.webkitTransform = track.style.transform = 'translate3d(0,' + (-y) + 'px,0)';
     });
     var initial = itemEls[o.selectedIndex || 0] || itemEls[0] || null;

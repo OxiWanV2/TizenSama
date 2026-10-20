@@ -12,19 +12,19 @@ Les données ne sont pas dans ce dépôt : elles sont chiffrées avec un code PI
 2. Ouvrir le gestionnaire de modules, choisir **Ajouter un module GitHub** et saisir :
 
    ```
-   OxiWanV2/TizenSama@v1.4.2
+   OxiWanV2/TizenSama@v1.4.3
    ```
 
 3. Revenir à la liste des modules et lancer **TizenSama**.
 4. Au premier lancement, saisir le code PIN du catalogue (touches chiffres de la télécommande, ou pavé à l'écran avec les flèches et OK). Le code est ensuite mémorisé sur la TV ; il peut être oublié depuis les réglages.
 
-Le module est ajouté **avec le tag de la version** (`@v1.4.2`). TizenBrew charge alors `package.json`, `app/index.html`, les scripts, le CSS et `app/agent.js` depuis ce tag Git, que jsDelivr sert toujours à l'identique. Les branches (`@main` ou sans suffixe) sont à éviter : les serveurs de jsDelivr restent incohérents pendant des minutes, voire des heures, après un push, même après purge, et une TV pouvait recevoir un mélange d'anciens et de nouveaux fichiers. Hors TizenBrew (chemin sans `/module/`), `index.html` utilise les fichiers locaux.
+Le module est ajouté **avec le tag de la version** (`@v1.4.3`). TizenBrew charge alors `package.json`, `app/index.html`, les scripts, le CSS et `app/agent.js` depuis ce tag Git, que jsDelivr sert toujours à l'identique. Les branches (`@main` ou sans suffixe) sont à éviter : les serveurs de jsDelivr restent incohérents pendant des minutes, voire des heures, après un push, même après purge, et une TV pouvait recevoir un mélange d'anciens et de nouveaux fichiers. Hors TizenBrew (chemin sans `/module/`), `index.html` utilise les fichiers locaux.
 
 Publier une version :
 
-1. Mettre le même numéro dans `release` (`app/index.html`), `TS.VERSION` (`app/js/core.js`), `version` et `websiteURL` (`package.json`, `…TizenSama%40v1.4.3/app/index.html`).
-2. Commiter, créer le tag (`git tag v1.4.3`) et pousser la branche et le tag (`git push origin main v1.4.3`).
-3. Sur la TV, dans le gestionnaire de modules de TizenBrew, supprimer l'ancien module et ajouter `OxiWanV2/TizenSama@v1.4.3`, puis relancer. Aucune purge ni redémarrage à froid n'est nécessaire : le nom du module change, donc TizenBrew recharge aussi l'agent.
+1. Mettre le même numéro dans `release` (`app/index.html`), `TS.VERSION` (`app/js/core.js`), `version` et `websiteURL` (`package.json`, `…TizenSama%40v1.4.4/app/index.html`).
+2. Commiter, créer le tag (`git tag v1.4.4`) et pousser la branche et le tag (`git push origin main v1.4.4`).
+3. Sur la TV, dans le gestionnaire de modules de TizenBrew, supprimer l'ancien module et ajouter `OxiWanV2/TizenSama@v1.4.4`, puis relancer. Aucune purge ni redémarrage à froid n'est nécessaire : le nom du module change, donc TizenBrew recharge aussi l'agent.
 
 Le service TizenBrew garde le script `app/agent.js` en mémoire sous le nom du module, d'où l'intérêt de changer de tag à chaque version. Si le dépôt est renommé ou forké, adapter `websiteURL` dans `package.json` (le nom du module y est encodé : `gh%2FUtilisateur%2FDepot%40vX.Y.Z`).
 
@@ -54,7 +54,9 @@ Ces lecteurs passent en tête de liste. Si le NAS répond que la vidéo est indi
 
 Sur l'écran du code PIN : chiffres pour saisir (le focus passe alors sur OK), flèches et OK pour le pavé à l'écran, Retour pour effacer le dernier chiffre (Retour sur un code vide quitte l'application).
 
-Ordre des lecteurs pour chaque épisode : d'abord celui retenu pour l'anime, puis les lecteurs VOE (lus en natif), puis le lecteur préféré des réglages, puis les autres. Le lecteur d'un anime se choisit sur sa fiche ; changer de lecteur pendant la lecture (touche rouge ou panneau jaune) le retient aussi pour cet anime, sans toucher au réglage global. Un changement automatique après une panne ne modifie rien. À la fin d'un épisode, le suivant démarre automatiquement (désactivable dans les réglages).
+Ordre des lecteurs pour chaque épisode : d'abord celui retenu pour l'anime, puis les lecteurs VOE (lus en natif), puis le lecteur préféré des réglages, puis les autres. Le lecteur d'un anime se choisit sur sa fiche ; changer de lecteur pendant la lecture (touche rouge ou panneau jaune) le retient aussi pour cet anime, sans toucher au réglage global. Un changement automatique après une panne ne modifie rien.
+
+Les synopsis trop longs pour leur cadre défilent lentement d'eux-mêmes, sur l'accueil comme sur la fiche ; le réglage **Défilement des synopsis** permet de les figer avec des points de suspension. À la fin d'un épisode, le suivant démarre automatiquement (désactivable dans les réglages).
 
 ## Données
 

@@ -2,7 +2,7 @@
   'use strict';
 
   var TS = window.TS = {};
-  TS.VERSION = '1.4.2';
+  TS.VERSION = '1.4.3';
   TS.KEY = {
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, BACK: 10009, BACKSPACE: 8, ESC: 27, SPACE: 32,
     PLAYPAUSE: 10252, PLAY: 415, PAUSE: 19, STOP: 413, REWIND: 412, FF: 417, PREV: 10232, NEXT: 10233,
@@ -250,7 +250,7 @@
       cache[k] = undefined;
       try { localStorage.removeItem(this.key(k)); } catch (e) {}
     },
-    defaults: { lang: 'vostfr', autoNext: true, player: '', nas: true },
+    defaults: { lang: 'vostfr', autoNext: true, player: '', nas: true, textScroll: true },
     settings: function () {
       var saved = this.read('settings', {}) || {}, out = {}, k;
       for (k in this.defaults) if (this.defaults.hasOwnProperty(k)) out[k] = this.defaults[k];
