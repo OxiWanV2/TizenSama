@@ -200,9 +200,21 @@
     return minP;
   }
 
+  function sibling(cur, dir) {
+    var p = cur.parentNode;
+    if (!p || !p.classList || !(p.classList.contains('shelf-track') || p.classList.contains('grid-row'))) return null;
+    var n = dir === K.RIGHT ? cur.nextElementSibling : cur.previousElementSibling;
+    while (n && (!n.hasAttribute('data-focusable') || n.getAttribute('data-disabled') === '1')) n = dir === K.RIGHT ? n.nextElementSibling : n.previousElementSibling;
+    return n;
+  }
+
   focus.find = function (dir, from) {
     var cur = from || focus.current;
     if (!cur) return null;
+    if (dir === K.LEFT || dir === K.RIGHT) {
+      var near = sibling(cur, dir);
+      if (near) return near;
+    }
     var c = rect(cur), tolH = Math.min(c.w, 60), tolV = Math.min(c.h, 40);
     var g = groups(), cands = [], i, hit;
     var roots = focus.roots(), curRow = rowOf(cur, roots);

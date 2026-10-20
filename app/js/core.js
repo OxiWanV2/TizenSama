@@ -2,13 +2,14 @@
   'use strict';
 
   var TS = window.TS = {};
-  TS.VERSION = '1.2.2';
+  TS.VERSION = '1.3.0';
   TS.KEY = {
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, BACK: 10009, BACKSPACE: 8, ESC: 27, SPACE: 32,
     PLAYPAUSE: 10252, PLAY: 415, PAUSE: 19, STOP: 413, REWIND: 412, FF: 417, PREV: 10232, NEXT: 10233,
     RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406, INFO: 457, CHUP: 427, CHDOWN: 428, EXIT: 10182
   };
   TS.isTV = /Tizen|SMART-TV|SmartTV/i.test(navigator.userAgent);
+  if (TS.isTV || /[?&]tv=1/.test(location.search)) document.documentElement.className += ' tv';
   TS.BASE = (function () {
     var href = location.href.replace(/[?#].*$/, '');
     return href.substring(0, href.lastIndexOf('/') + 1);

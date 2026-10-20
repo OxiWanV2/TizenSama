@@ -286,7 +286,7 @@
     return s;
   };
 
-  var lazy = ui.lazy = { timer: null };
+  var lazy = ui.lazy = { timer: null, maxTimer: null };
 
   function loadImage(img) {
     var src = img.getAttribute('data-src');
@@ -302,7 +302,10 @@
   }
 
   lazy.scan = function () {
+    if (lazy.timer) clearTimeout(lazy.timer);
+    if (lazy.maxTimer) clearTimeout(lazy.maxTimer);
     lazy.timer = null;
+    lazy.maxTimer = null;
     var imgs = document.querySelectorAll('.screen.active img[data-src], .player-panel img[data-src], .modal img[data-src]');
     if (!imgs.length) return;
     var vw = window.innerWidth, vh = window.innerHeight, mx = vw * 0.35, my = vh * 0.7;
@@ -317,8 +320,8 @@
 
   lazy.schedule = function () {
     if (lazy.timer) clearTimeout(lazy.timer);
-    lazy.timer = setTimeout(lazy.scan, 60);
-    setTimeout(lazy.scan, 480);
+    lazy.timer = setTimeout(lazy.scan, 320);
+    if (!lazy.maxTimer) lazy.maxTimer = setTimeout(lazy.scan, 900);
   };
 
   lazy.now = function (img) { loadImage(img); };
