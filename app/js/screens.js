@@ -720,13 +720,13 @@
     }
 
     function choosePlayer() {
-      var names = [''].concat(availablePlayers()), cur = store.settings().player;
+      var names = [''].concat(availablePlayers()), cur = store.animePlayer(slug);
       ui.modal.open({
-        title: 'Lecteur préféré',
-        text: 'Essayé en premier quand il est disponible pour l’épisode. Touche rouge dans le lecteur pour en changer.',
+        title: 'Lecteur pour cet anime',
+        text: 'Essayé en premier pour cet anime quand il est disponible. Automatique : lecteurs VOE d’abord, puis le lecteur préféré des réglages. Touche rouge dans le lecteur pour en changer.',
         items: names.map(function (n) {
           return { label: n || 'Automatique', selected: n === cur, handler: function () {
-            store.setSetting('player', n);
+            store.setAnimePlayer(slug, n);
             refs.playerBtn._setValue(n || 'Auto');
           } };
         }),
@@ -777,7 +777,7 @@
         TS.app.notify('favorites');
       } });
       refs.langBtn = ui.button('VOSTFR', { icon: 'globe', onSelect: cycleLang });
-      refs.playerBtn = ui.button('Lecteur', { icon: 'screen', value: store.settings().player || 'Auto', onSelect: choosePlayer });
+      refs.playerBtn = ui.button('Lecteur', { icon: 'screen', value: store.animePlayer(slug) || 'Auto', onSelect: choosePlayer });
       actions.appendChild(refs.play);
       actions.appendChild(refs.fav);
       actions.appendChild(refs.langBtn);
@@ -903,7 +903,7 @@
       buildEpisodes(focusedIndex >= 0 ? focusedIndex : undefined);
       updatePlayButton();
       updateFavButton();
-      if (refs.playerBtn) refs.playerBtn._setValue(store.settings().player || 'Auto');
+      if (refs.playerBtn) refs.playerBtn._setValue(store.animePlayer(slug) || 'Auto');
     };
 
     s.destroy = function () {

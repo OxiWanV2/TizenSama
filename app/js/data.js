@@ -307,21 +307,23 @@
     return codes[0];
   };
 
-  data.episodePlayers = function (season, lang, ep) {
+  data.isVoe = function (url) {
+    return /^https:\/\/[a-z0-9.-]+\/e\/[a-z0-9]+\/?$/i.test(url || '');
+  };
+
+  data.episodePlayers = function (season, lang, ep, slug) {
     var l = season.langs[lang];
     if (!l || !l.episodes[ep - 1]) return [];
-    var players = l.episodes[ep - 1].slice();
-    var preferred = TS.store.settings().player;
-    if (preferred) {
-      for (var i = 0; i < players.length; i++) {
-        if (players[i][0] === preferred) {
-          var p = players.splice(i, 1)[0];
-          players.unshift(p);
-          break;
-        }
-      }
+    var list = l.episodes[ep - 1], anime = slug ? TS.store.animePlayer(slug) : '', global = TS.store.settings().player;
+    function rank(p) {
+      if (anime && p[0] === anime) return 0;
+      if (data.isVoe(p[1])) return 1;
+      if (global && p[0] === global) return 2;
+      return 3;
     }
-    return players;
+    return list.map(function (p, i) { return { p: p, r: rank(p), i: i }; })
+      .sort(function (a, b) { return a.r - b.r || a.i - b.i; })
+      .map(function (x) { return x.p; });
   };
 
   data.playerNames = function () {

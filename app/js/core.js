@@ -2,7 +2,7 @@
   'use strict';
 
   var TS = window.TS = {};
-  TS.VERSION = '1.3.1';
+  TS.VERSION = '1.3.2';
   TS.KEY = {
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, BACK: 10009, BACKSPACE: 8, ESC: 27, SPACE: 32,
     PLAYPAUSE: 10252, PLAY: 415, PAUSE: 19, STOP: 413, REWIND: 412, FF: 417, PREV: 10232, NEXT: 10233,
@@ -291,6 +291,21 @@
       return out;
     },
     clearFavorites: function () { this.write('favorites', {}); },
+    animePlayer: function (slug) {
+      var map = this.read('animePlayers', {}) || {};
+      return map[slug] ? map[slug].n : '';
+    },
+    setAnimePlayer: function (slug, name) {
+      var map = this.read('animePlayers', {}) || {};
+      if (name) map[slug] = { n: name, ts: Date.now() };
+      else delete map[slug];
+      var slugs = Object.keys(map);
+      if (slugs.length > 300) {
+        slugs.sort(function (a, b) { return map[a].ts - map[b].ts; });
+        for (var i = 0; i < slugs.length - 300; i++) delete map[slugs[i]];
+      }
+      this.write('animePlayers', map);
+    },
     watchedMap: function () { return this.read('watched', {}) || {}; },
     markWatched: function (slug, seasonId, ep) {
       var map = this.watchedMap();

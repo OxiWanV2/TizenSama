@@ -103,9 +103,11 @@
     return { title: count > 1 || ctx.detail.seasons.length > 1 ? 'Épisode ' + ctx.ep : ctx.detail.title, sub: count > 1 || ctx.detail.seasons.length > 1 ? parts.join(' · ') : parts.slice(1).join(' · ') };
   }
 
+  var frameSeq = 0;
+
   function frameUrl(url) {
     var m = /^(https:\/\/[a-z0-9.-]+)(\/e\/[a-z0-9]+)\/?$/i.exec(url);
-    return m ? m[1] + '/robots.txt#tsvoe=' + m[2] : null;
+    return m ? m[1] + '/robots.txt?ts=' + (++frameSeq) + '#tsvoe=' + m[2] : null;
   }
 
   function onMessage(e) {
@@ -239,7 +241,7 @@
     ctx.seasonIndex = seasonIndex;
     ctx.ep = ep;
     ctx.lang = lang || ctx.lang;
-    ctx.players = data.episodePlayers(seasonOf(ctx), ctx.lang, ctx.ep);
+    ctx.players = data.episodePlayers(seasonOf(ctx), ctx.lang, ctx.ep, ctx.slug);
     triedPlayers = {};
     if (!ctx.players.length) {
       ui.toast('Aucun lecteur disponible pour cet épisode', 3500);
@@ -268,7 +270,9 @@
     if (direct) {
       timers.agent = setTimeout(function () {
         timers.agent = null;
-        if (player.active && !state.agent) refs.frame.src = withAutoplay(p[1]);
+        if (!player.active || state.agent) return;
+        if (TS.isTV) failPlayer();
+        else refs.frame.src = withAutoplay(p[1]);
       }, 6000);
     }
     focusFrame();
@@ -278,7 +282,8 @@
     var ctx = player.ctx;
     if (ctx.players.length < 2) { ui.toast('Un seul lecteur disponible'); return; }
     var index = (ctx.playerIndex + delta + ctx.players.length) % ctx.players.length;
-    ui.toast('Lecteur ' + (index + 1) + '/' + ctx.players.length + ' · ' + ctx.players[index][0]);
+    ui.toast('Lecteur ' + (index + 1) + '/' + ctx.players.length + ' · ' + ctx.players[index][0] + ' · retenu pour cet anime');
+    store.setAnimePlayer(ctx.slug, ctx.players[index][0]);
     loadPlayer(index);
   }
 
@@ -339,7 +344,10 @@
       var opts = el('div', 'panel-options');
       ctx.players.forEach(function (p, idx) {
         var b = ui.button(p[0], { icon: idx === ctx.playerIndex ? 'check' : 'screen', primary: idx === ctx.playerIndex, onSelect: function () {
-          if (idx !== ctx.playerIndex) loadPlayer(idx);
+          if (idx !== ctx.playerIndex) {
+            store.setAnimePlayer(ctx.slug, p[0]);
+            loadPlayer(idx);
+          }
           else closePanel();
         } });
         if (idx === ctx.playerIndex) first = b;

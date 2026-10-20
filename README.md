@@ -46,7 +46,7 @@ Le lecteur affiche l'embed du site hébergeur en plein écran, sans rien par-des
 
 Sur l'écran du code PIN : chiffres pour saisir (le focus passe alors sur OK), flèches et OK pour le pavé à l'écran, Retour pour effacer le dernier chiffre (Retour sur un code vide quitte l'application).
 
-Le lecteur préféré se choisit dans les réglages ou sur la fiche de l'anime. À la fin d'un épisode, le suivant démarre automatiquement (désactivable dans les réglages).
+Ordre des lecteurs pour chaque épisode : d'abord celui retenu pour l'anime, puis les lecteurs VOE (lus en natif), puis le lecteur préféré des réglages, puis les autres. Le lecteur d'un anime se choisit sur sa fiche ; changer de lecteur pendant la lecture (touche rouge ou panneau jaune) le retient aussi pour cet anime, sans toucher au réglage global. Un changement automatique après une panne ne modifie rien. À la fin d'un épisode, le suivant démarre automatiquement (désactivable dans les réglages).
 
 ## Données
 
