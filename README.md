@@ -12,26 +12,21 @@ Les données ne sont pas dans ce dépôt : elles sont chiffrées avec un code PI
 2. Ouvrir le gestionnaire de modules, choisir **Ajouter un module GitHub** et saisir :
 
    ```
-   OxiWanV2/TizenSama@main
+   OxiWanV2/TizenSama@v1.4.2
    ```
 
 3. Revenir à la liste des modules et lancer **TizenSama**.
 4. Au premier lancement, saisir le code PIN du catalogue (touches chiffres de la télécommande, ou pavé à l'écran avec les flèches et OK). Le code est ensuite mémorisé sur la TV ; il peut être oublié depuis les réglages.
 
-TizenBrew charge `package.json`, `app/index.html` et `app/agent.js` depuis jsDelivr (`cdn.jsdelivr.net/gh/OxiWanV2/TizenSama@main`). Les serveurs de jsDelivr ne sont pas cohérents entre eux pendant plusieurs minutes après un push, parfois davantage : une TV pouvait recevoir un mélange d'anciens et de nouveaux fichiers. Pour l'éviter, `index.html` charge tous les scripts et le CSS depuis un **tag Git figé** (variable `release` en tête du fichier, par exemple `@v1.4.1`), dont le contenu ne change jamais. Si la TV reçoit un ancien `index.html`, elle exécute l'ancienne version complète, jamais un mélange. Hors TizenBrew (chemin sans `/module/`), les fichiers locaux sont utilisés.
+Le module est ajouté **avec le tag de la version** (`@v1.4.2`). TizenBrew charge alors `package.json`, `app/index.html`, les scripts, le CSS et `app/agent.js` depuis ce tag Git, que jsDelivr sert toujours à l'identique. Les branches (`@main` ou sans suffixe) sont à éviter : les serveurs de jsDelivr restent incohérents pendant des minutes, voire des heures, après un push, même après purge, et une TV pouvait recevoir un mélange d'anciens et de nouveaux fichiers. Hors TizenBrew (chemin sans `/module/`), `index.html` utilise les fichiers locaux.
 
 Publier une version :
 
-1. Mettre le même numéro dans `release` (`app/index.html`), `TS.VERSION` (`app/js/core.js`) et `version` (`package.json`).
-2. Commiter, créer le tag (`git tag v1.4.2`) et le pousser (`git push origin main v1.4.2`).
-3. Dans `package.json`, faire pointer `websiteURL` sur ce tag (`…TizenSama%40v1.4.2/app/index.html`), commiter et pousser. `package.json` est ainsi le seul fichier variable : l'application entière, `index.html` compris, vient du tag immuable.
-4. Purger une seule fois `package.json` (et `agent.js` s'il a changé), puis redémarrer la TV à froid pour que TizenBrew relise le module :
+1. Mettre le même numéro dans `release` (`app/index.html`), `TS.VERSION` (`app/js/core.js`), `version` et `websiteURL` (`package.json`, `…TizenSama%40v1.4.3/app/index.html`).
+2. Commiter, créer le tag (`git tag v1.4.3`) et pousser la branche et le tag (`git push origin main v1.4.3`).
+3. Sur la TV, dans le gestionnaire de modules de TizenBrew, supprimer l'ancien module et ajouter `OxiWanV2/TizenSama@v1.4.3`, puis relancer. Aucune purge ni redémarrage à froid n'est nécessaire : le nom du module change, donc TizenBrew recharge aussi l'agent.
 
-```
-for f in package.json app/agent.js; do curl -s -o /dev/null "https://purge.jsdelivr.net/gh/OxiWanV2/TizenSama@main/$f"; done
-```
-
-Le service TizenBrew garde aussi le script `app/agent.js` en mémoire jusqu'à son redémarrage : après une modification de ce fichier, redémarrer la TV à froid. Si le dépôt est renommé ou forké, adapter `websiteURL` dans `package.json` (le nom du module y est encodé : `gh%2FUtilisateur%2FDepot%40main`).
+Le service TizenBrew garde le script `app/agent.js` en mémoire sous le nom du module, d'où l'intérêt de changer de tag à chaque version. Si le dépôt est renommé ou forké, adapter `websiteURL` dans `package.json` (le nom du module y est encodé : `gh%2FUtilisateur%2FDepot%40vX.Y.Z`).
 
 Le lecteur affiche l'embed du site hébergeur en plein écran, sans rien par-dessus : ce sont ses propres commandes qui répondent à la télécommande. Le module est de type `mods` : TizenBrew injecte `app/agent.js` dans chaque page chargée, y compris les iframes des lecteurs. Sur les lecteurs ordinaires, ce script ne dessine rien ; il bloque les popups publicitaires, lance la lecture, reprend à la dernière position mémorisée et renvoie à l'application les touches qui lui sont réservées (Retour, couleurs, chaînes). Cas particulier des lecteurs VOE (derricknationtop.com et ses autres domaines, reconnus au contenu de la page et non au nom de domaine) : leur page contient un piège anti-débogage (instruction `debugger`) qui la fige sous TizenBrew, puisque celui-ci active le débogueur sans jamais relancer une page en pause. L'application n'ouvre donc jamais cette page : l'iframe charge le `robots.txt` du domaine (simple fichier texte, sans script), le script y relit la page de l'épisode par une requête interne au domaine, suit les redirections des miroirs, décode l'adresse du flux (mp4 direct, sinon HLS) et affiche une balise `<video>` native habillée d'une interface façon Apple TV : titre de l'épisode, barre de progression avec mémoire tampon, temps écoulé et restant, icônes de lecture et de pause, indicateurs de saut. Dans ce lecteur, OK met en pause ou relance, gauche et droite sautent de 10 s et maintenus font défiler la barre en accélérant (relâcher pour valider, Retour pour annuler), haut et bas affichent les informations. Les jetons du CDN étant liés à l'adresse IP qui a chargé la page, tout se passe sur la TV, sans serveur intermédiaire. Cela suppose que TizenBrew tourne dans son mode habituel (mode développeur activé, IP hôte `127.0.0.1`).
 
