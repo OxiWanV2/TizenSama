@@ -18,10 +18,16 @@ Les données ne sont pas dans ce dépôt : elles sont chiffrées avec un code PI
 3. Revenir à la liste des modules et lancer **TizenSama**.
 4. Au premier lancement, saisir le code PIN du catalogue (touches chiffres de la télécommande, ou pavé à l'écran avec les flèches et OK). Le code est ensuite mémorisé sur la TV ; il peut être oublié depuis les réglages.
 
-TizenBrew charge les fichiers depuis jsDelivr (`cdn.jsdelivr.net/gh/OxiWanV2/TizenSama@main`). Le suffixe `@main` est important : sans lui, jsDelivr peut continuer à servir une ancienne version pendant des heures, même après une purge. Après un push, purger une seule fois chaque fichier modifié (des purges répétées du même fichier sont bloquées une dizaine de minutes) :
+TizenBrew charge `package.json`, `app/index.html` et `app/agent.js` depuis jsDelivr (`cdn.jsdelivr.net/gh/OxiWanV2/TizenSama@main`). Les serveurs de jsDelivr ne sont pas cohérents entre eux pendant plusieurs minutes après un push, parfois davantage : une TV pouvait recevoir un mélange d'anciens et de nouveaux fichiers. Pour l'éviter, `index.html` charge tous les scripts et le CSS depuis un **tag Git figé** (variable `release` en tête du fichier, par exemple `@v1.4.1`), dont le contenu ne change jamais. Si la TV reçoit un ancien `index.html`, elle exécute l'ancienne version complète, jamais un mélange. Hors TizenBrew (chemin sans `/module/`), les fichiers locaux sont utilisés.
+
+Publier une version :
+
+1. Mettre le même numéro dans `release` (`app/index.html`), `TS.VERSION` (`app/js/core.js`) et `version` (`package.json`).
+2. Commiter, créer le tag (`git tag v1.4.1`), puis pousser la branche et le tag (`git push origin main --tags`).
+3. Purger une seule fois `index.html` et `package.json` (et `agent.js` s'il a changé) :
 
 ```
-for f in package.json app/index.html app/agent.js app/css/app.css app/js/*.js; do curl -s -o /dev/null "https://purge.jsdelivr.net/gh/OxiWanV2/TizenSama@main/$f"; done
+for f in package.json app/index.html app/agent.js; do curl -s -o /dev/null "https://purge.jsdelivr.net/gh/OxiWanV2/TizenSama@main/$f"; done
 ```
 
 Le service TizenBrew garde aussi le script `app/agent.js` en mémoire jusqu'à son redémarrage : après une modification de ce fichier, redémarrer la TV à froid. Si le dépôt est renommé ou forké, adapter `websiteURL` dans `package.json` (le nom du module y est encodé : `gh%2FUtilisateur%2FDepot%40main`).
