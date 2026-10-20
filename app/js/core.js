@@ -2,7 +2,7 @@
   'use strict';
 
   var TS = window.TS = {};
-  TS.VERSION = '1.3.2';
+  TS.VERSION = '1.4.0';
   TS.KEY = {
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, BACK: 10009, BACKSPACE: 8, ESC: 27, SPACE: 32,
     PLAYPAUSE: 10252, PLAY: 415, PAUSE: 19, STOP: 413, REWIND: 412, FF: 417, PREV: 10232, NEXT: 10233,
@@ -27,6 +27,17 @@
     if (base.charAt(base.length - 1) !== '/') base += '/';
     return base;
   })();
+  TS.NAS_URL = (function () {
+    var base = 'http://192.168.0.79:8632';
+    if (!TS.isTV) {
+      var m = /[?&]nas=([^&#]*)/.exec(location.search);
+      if (m) {
+        try { base = decodeURIComponent(m[1]); } catch (e) {}
+      }
+    }
+    return base.replace(/\/+$/, '');
+  })();
+  TS.NAS_TOKEN = '';
   TS.THUMB = 'https://cdn.jsdelivr.net/gh/Anime-Sama/IMG@img/contenu/thumb/';
   TS.TMDB = 'https://image.tmdb.org/t/p/';
   TS.LANG_LABELS = { vostfr: 'VOSTFR', vf: 'VF', vf1: 'VF 1', vf2: 'VF 2', va: 'VA', vj: 'VJ', vkr: 'VKR', vcn: 'VCN', vqc: 'VQC', 'var': 'VAR' };
@@ -239,7 +250,7 @@
       cache[k] = undefined;
       try { localStorage.removeItem(this.key(k)); } catch (e) {}
     },
-    defaults: { lang: 'vostfr', autoNext: true, player: '' },
+    defaults: { lang: 'vostfr', autoNext: true, player: '', nas: true },
     settings: function () {
       var saved = this.read('settings', {}) || {}, out = {}, k;
       for (k in this.defaults) if (this.defaults.hasOwnProperty(k)) out[k] = this.defaults[k];

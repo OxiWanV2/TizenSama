@@ -7,6 +7,7 @@
 
   var player = TS.player = { active: false, built: false, ctx: null, el: null };
   var refs = {}, state, timers = {}, videoSource = null, panelOpen = false, panelTab = 'episodes', triedPlayers = {}, lastSave = 0, lastDiag = '';
+  var mode = 'frame', nasReq = null, nasSession = null, nasSeq = 0;
 
   function freshState() {
     return { agent: false, video: false, t: 0, d: 0, ended: false, paused: true, resume: 0 };
@@ -29,6 +30,7 @@
     refs.frame.setAttribute('frameborder', '0');
     refs.frame.onload = function () { if (player.active && !panelOpen) focusFrame(); };
     root.appendChild(refs.frame);
+    TS.native.build(root);
     refs.shield = el('div', 'player-shield');
     refs.shield.setAttribute('tabindex', '-1');
     util.focusable(refs.shield);
@@ -45,6 +47,10 @@
   }
 
   function focusFrame() {
+    if (mode === 'native') {
+      focusParent();
+      return;
+    }
     try { refs.frame.focus(); } catch (e) {}
     try { refs.frame.contentWindow.focus(); } catch (e2) {}
     send('focus');
@@ -252,19 +258,96 @@
     loadPlayer(0, resume);
   }
 
-  function loadPlayer(index, resume) {
-    var ctx = player.ctx, p = ctx.players[index];
-    if (!p) return;
-    var keep = resume !== undefined ? resume : (state && state.video && state.t > 5 ? state.t : (state ? state.resume : 0));
-    clearAllTimers();
-    videoSource = null;
-    state = freshState();
-    state.resume = keep || 0;
-    lastSave = Date.now();
-    ctx.playerIndex = index;
-    triedPlayers[index] = true;
-    closePanel();
-    lastDiag = '';
+  function nasQuery(extra) {
+    var q = [];
+    if (TS.NAS_TOKEN) q.push('token=' + encodeURIComponent(TS.NAS_TOKEN));
+    if (extra) q.push(extra);
+    return q.length ? '?' + q.join('&') : '';
+  }
+
+  function nasStop() {
+    nasSeq++;
+    if (nasReq) {
+      try { nasReq.abort(); } catch (e) {}
+      nasReq = null;
+    }
+    if (nasSession) {
+      var x = new XMLHttpRequest();
+      try {
+        x.open('GET', TS.NAS_URL + nasSession.close + nasQuery(), true);
+        x.send(null);
+      } catch (e2) {}
+      nasSession = null;
+    }
+    TS.native.stop();
+  }
+
+  function setMode(m) {
+    mode = m;
+    if (player.el) player.el.classList.toggle('native', m === 'native');
+  }
+
+  function onNativeState(t, d, paused, ended) {
+    var wasEnded = state.ended;
+    state.video = true;
+    state.agent = true;
+    state.t = t || 0;
+    state.d = d && isFinite(d) ? d : 0;
+    state.paused = !!paused;
+    state.ended = !!ended;
+    if (state.ended && !wasEnded) onEnded();
+    else if (Date.now() - lastSave > 5000 && state.t > 0) saveProgress();
+  }
+
+  function loadNative(p) {
+    setMode('native');
+    try { refs.frame.src = 'about:blank'; } catch (e) {}
+    var meta = metaInfo(), seq = nasSeq, xhr = new XMLHttpRequest(), resume = state.resume;
+    TS.native.prepare(meta);
+    focusParent();
+    nasReq = xhr;
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState !== 4 || seq !== nasSeq || !player.active) return;
+      nasReq = null;
+      var j = null;
+      try { j = JSON.parse(xhr.responseText); } catch (e) {}
+      if (xhr.status === 200 && j && j.stream) {
+        nasSession = j;
+        TS.native.load({ kind: j.kind, stream: TS.NAS_URL + j.stream + nasQuery(), starts: j.starts, duration: j.duration }, {
+          resume: resume,
+          title: meta.title,
+          sub: meta.sub,
+          onState: onNativeState,
+          onEnded: function () {},
+          onError: function (msg) {
+            lastDiag = msg;
+            failPlayer();
+          }
+        });
+        return;
+      }
+      if (xhr.status && j && j.error) {
+        lastDiag = 'NAS · ' + j.error;
+        failPlayer();
+        return;
+      }
+      lastDiag = 'NAS injoignable';
+      ui.toast('NAS injoignable · lecteur intégré', 3000);
+      loadFrame(p);
+    };
+    try {
+      xhr.open('GET', TS.NAS_URL + '/api/resolve' + nasQuery('url=' + encodeURIComponent(p[1])), true);
+      xhr.timeout = 30000;
+      xhr.send(null);
+    } catch (e) {
+      nasReq = null;
+      loadFrame(p);
+    }
+  }
+
+  function loadFrame(p) {
+    setMode('frame');
+    TS.native.hide();
     var direct = frameUrl(p[1]);
     refs.frame.src = direct || withAutoplay(p[1]);
     if (direct) {
@@ -276,6 +359,24 @@
       }, 6000);
     }
     focusFrame();
+  }
+
+  function loadPlayer(index, resume) {
+    var ctx = player.ctx, p = ctx.players[index];
+    if (!p) return;
+    var keep = resume !== undefined ? resume : (state && state.video && state.t > 5 ? state.t : (state ? state.resume : 0));
+    clearAllTimers();
+    nasStop();
+    videoSource = null;
+    state = freshState();
+    state.resume = keep || 0;
+    lastSave = Date.now();
+    ctx.playerIndex = index;
+    triedPlayers[index] = true;
+    closePanel();
+    lastDiag = '';
+    if (data.nasEnabled() && data.nasCapable(p[1])) loadNative(p);
+    else loadFrame(p);
   }
 
   function switchPlayer(delta) {
@@ -412,9 +513,15 @@
     if (panelOpen) { panelOpen = false; refs.panel.classList.remove('on'); focus.popRoot(); }
     player.active = false;
     videoSource = null;
+    nasStop();
+    setMode('frame');
     try { refs.frame.src = 'about:blank'; } catch (e) {}
     focusParent();
     TS.app.closePlayer();
+  };
+
+  player.keyUp = function (code) {
+    if (player.active && !panelOpen && mode === 'native') TS.native.keyUp(code);
   };
 
   player.save = function () {
@@ -433,6 +540,7 @@
       if (code === K.ENTER) { if (!repeat) focus.select(); return true; }
       return true;
     }
+    if (mode === 'native' && TS.native.handleKey(code, repeat)) return true;
     if (repeat) return true;
     switch (code) {
       case K.BACK:

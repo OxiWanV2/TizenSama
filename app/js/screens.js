@@ -554,6 +554,13 @@
       });
       box.appendChild(rows.lang);
       box.appendChild(rows.autoNext);
+      rows.nas = settingRow('Lecture via le NAS', s.nas !== false ? 'Oui' : 'Non', function () {
+        var next = store.settings().nas === false;
+        store.setSetting('nas', next);
+        rows.nas._setValue(next ? 'Oui' : 'Non');
+        ui.toast(next ? 'VOE, ansembed, Uqload et compatibles lus via ' + TS.NAS_URL.replace(/^https?:\/\//, '') : 'Lecteurs intégrés uniquement');
+      });
+      box.appendChild(rows.nas);
       box.appendChild(rows.player);
       box.appendChild(el('div', 'settings-group', 'Données'));
       if (TS.vault.locked) {

@@ -311,15 +311,26 @@
     return /^https:\/\/[a-z0-9.-]+\/e\/[a-z0-9]+\/?$/i.test(url || '');
   };
 
+  var NAS_HOSTS = /^https?:\/\/([a-z0-9-]+\.)*(ansembed\.net|uqload\.[a-z]+|minochinos\.com|dingtezuni\.com|bingezove\.com|callistanise\.com|smoothpre\.com|yourupload\.com|sendvid\.com)(\/|$)/i;
+
+  data.nasEnabled = function () {
+    return !!TS.NAS_URL && TS.store.settings().nas !== false;
+  };
+
+  data.nasCapable = function (url) {
+    return data.isVoe(url) || NAS_HOSTS.test(url || '');
+  };
+
   data.episodePlayers = function (season, lang, ep, slug) {
     var l = season.langs[lang];
     if (!l || !l.episodes[ep - 1]) return [];
-    var list = l.episodes[ep - 1], anime = slug ? TS.store.animePlayer(slug) : '', global = TS.store.settings().player;
+    var list = l.episodes[ep - 1], anime = slug ? TS.store.animePlayer(slug) : '', global = TS.store.settings().player, nas = data.nasEnabled();
     function rank(p) {
       if (anime && p[0] === anime) return 0;
       if (data.isVoe(p[1])) return 1;
-      if (global && p[0] === global) return 2;
-      return 3;
+      if (nas && data.nasCapable(p[1])) return 2;
+      if (global && p[0] === global) return 3;
+      return 4;
     }
     return list.map(function (p, i) { return { p: p, r: rank(p), i: i }; })
       .sort(function (a, b) { return a.r - b.r || a.i - b.i; })

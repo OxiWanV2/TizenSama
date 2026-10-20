@@ -307,6 +307,7 @@
   }
 
   function onKeyUp(e) {
+    if (TS.player.active && TS.player.keyUp) TS.player.keyUp(e.keyCode);
     if (e.keyCode === K.ENTER) onEnterUp();
   }
 
