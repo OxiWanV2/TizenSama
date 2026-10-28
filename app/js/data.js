@@ -328,7 +328,7 @@
     return /^https:\/\/[a-z0-9.-]+\/e\/[a-z0-9]+\/?$/i.test(url || '');
   };
 
-  var NAS_HOSTS = /^https?:\/\/([a-z0-9-]+\.)*(ansembed\.net|uqload\.[a-z]+|minochinos\.com|dingtezuni\.com|bingezove\.com|callistanise\.com|smoothpre\.com|yourupload\.com|sendvid\.com|vk\.com|vkvideo\.ru|vk\.ru)(\/|$)/i;
+  var NAS_HOSTS = /^https?:\/\/([a-z0-9-]+\.)*(ansembed\.net|uqload\.[a-z]+|minochinos\.com|dingtezuni\.com|bingezove\.com|callistanise\.com|smoothpre\.com|yourupload\.com|sendvid\.com|vk\.com|vkvideo\.ru|vk\.ru|vidmoly\.[a-z]+)(\/|$)/i;
 
   var VOE_NAMES = /^(voe\.sx|derricknationtop|teresapoliticallearn|megankiddifference|jeremyparticipantanything|claireguessthousand|jamesbornmain)(\.|$)/i;
   var PLAYER_LABELS = { 'ansembed.net': 'ansembed', 'www.yourupload.com': 'YourUpload', 'video.sibnet.ru': 'Sibnet', 'lpayer.embed4me.com': 'Embed4me' };

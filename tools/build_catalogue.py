@@ -12,6 +12,7 @@ from urllib.parse import urlparse, parse_qs
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "catalogue.json")
 OUT = os.path.join(ROOT, "app", "data")
+EXTRAS = os.path.join(ROOT, "tools", "extras.json")
 
 TMDB_PREFIX = "https://image.tmdb.org/t/p/w342/"
 THUMB_PATTERN = "https://cdn.jsdelivr.net/gh/Anime-Sama/IMG@img/contenu/thumb/{slug}.webp"
@@ -216,6 +217,19 @@ def main():
     with open(SRC, "r", encoding="utf-8") as handle:
         catalogue = json.load(handle)
     animes = catalogue.get("animes") or []
+    if os.path.isfile(EXTRAS):
+        with open(EXTRAS, "r", encoding="utf-8") as handle:
+            extras = json.load(handle)
+        by_slug = {a.get("slug"): i for i, a in enumerate(animes)}
+        for extra in extras.get("animes") or []:
+            if not extra.get("slug"):
+                continue
+            if extra["slug"] in by_slug:
+                animes[by_slug[extra["slug"]]] = extra
+            else:
+                by_slug[extra["slug"]] = len(animes)
+                animes.append(extra)
+        print("extras: %d" % len(extras.get("animes") or []))
 
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)

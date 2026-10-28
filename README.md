@@ -12,19 +12,19 @@ Les données ne sont pas dans ce dépôt : elles sont chiffrées avec un code PI
 2. Ouvrir le gestionnaire de modules, choisir **Ajouter un module GitHub** et saisir :
 
    ```
-   OxiWanV2/TizenSama@v1.4.5
+   OxiWanV2/TizenSama@v1.4.6
    ```
 
 3. Revenir à la liste des modules et lancer **TizenSama**.
 4. Au premier lancement, saisir le code PIN du catalogue (touches chiffres de la télécommande, ou pavé à l'écran avec les flèches et OK). Le code est ensuite mémorisé sur la TV ; il peut être oublié depuis les réglages.
 
-Le module est ajouté **avec le tag de la version** (`@v1.4.5`). TizenBrew charge alors `package.json`, `app/index.html`, les scripts, le CSS et `app/agent.js` depuis ce tag Git, que jsDelivr sert toujours à l'identique. Les branches (`@main` ou sans suffixe) sont à éviter : les serveurs de jsDelivr restent incohérents pendant des minutes, voire des heures, après un push, même après purge, et une TV pouvait recevoir un mélange d'anciens et de nouveaux fichiers. Hors TizenBrew (chemin sans `/module/`), `index.html` utilise les fichiers locaux.
+Le module est ajouté **avec le tag de la version** (`@v1.4.6`). TizenBrew charge alors `package.json`, `app/index.html`, les scripts, le CSS et `app/agent.js` depuis ce tag Git, que jsDelivr sert toujours à l'identique. Les branches (`@main` ou sans suffixe) sont à éviter : les serveurs de jsDelivr restent incohérents pendant des minutes, voire des heures, après un push, même après purge, et une TV pouvait recevoir un mélange d'anciens et de nouveaux fichiers. Hors TizenBrew (chemin sans `/module/`), `index.html` utilise les fichiers locaux.
 
 Publier une version :
 
-1. Mettre le même numéro dans `release` (`app/index.html`), `TS.VERSION` (`app/js/core.js`), `version` et `websiteURL` (`package.json`, `…TizenSama%40v1.4.6/app/index.html`).
-2. Commiter, créer le tag (`git tag v1.4.6`) et pousser la branche et le tag (`git push origin main v1.4.6`).
-3. Sur la TV, dans le gestionnaire de modules de TizenBrew, supprimer l'ancien module et ajouter `OxiWanV2/TizenSama@v1.4.6`, puis relancer. Aucune purge ni redémarrage à froid n'est nécessaire : le nom du module change, donc TizenBrew recharge aussi l'agent.
+1. Mettre le même numéro dans `release` (`app/index.html`), `TS.VERSION` (`app/js/core.js`), `version` et `websiteURL` (`package.json`, `…TizenSama%40v1.4.7/app/index.html`).
+2. Commiter, créer le tag (`git tag v1.4.7`) et pousser la branche et le tag (`git push origin main v1.4.7`).
+3. Sur la TV, dans le gestionnaire de modules de TizenBrew, supprimer l'ancien module et ajouter `OxiWanV2/TizenSama@v1.4.7`, puis relancer. Aucune purge ni redémarrage à froid n'est nécessaire : le nom du module change, donc TizenBrew recharge aussi l'agent.
 
 Le service TizenBrew garde le script `app/agent.js` en mémoire sous le nom du module, d'où l'intérêt de changer de tag à chaque version. Si le dépôt est renommé ou forké, adapter `websiteURL` dans `package.json` (le nom du module y est encodé : `gh%2FUtilisateur%2FDepot%40vX.Y.Z`).
 
@@ -32,7 +32,7 @@ Le lecteur affiche l'embed du site hébergeur en plein écran, sans rien par-des
 
 ## Lecture via le NAS
 
-Pour VOE, ansembed, Uqload, la famille callistanise (minochinos, dingtezuni, bingezove, smoothpre), VK, YourUpload et Sendvid, l'application demande le flux au serveur `nas-stream` installé sur le NAS (`TS.NAS_URL` dans `app/js/core.js`, `http://192.168.0.79:8632` par défaut). Le NAS lit la page de l'embed, en extrait la vidéo et la renvoie en mp4 : mp4 relayé tel quel, ou HLS converti par ffmpeg sans réencodage. L'application la joue dans son propre lecteur façon Apple TV, dans sa page et non dans une iframe : titre et épisode, barre de progression, temps restant, sauts de 10 s, défilement accéléré en maintenant gauche ou droite, touches chiffres pour aller à 0 %, 10 %, … 90 %.
+Pour VOE, ansembed, Uqload, la famille callistanise (minochinos, dingtezuni, bingezove, smoothpre), VK, Vidmoly, YourUpload et Sendvid, l'application demande le flux au serveur `nas-stream` installé sur le NAS (`TS.NAS_URL` dans `app/js/core.js`, `http://192.168.0.79:8632` par défaut). Le NAS lit la page de l'embed, en extrait la vidéo et la renvoie en mp4 : mp4 relayé tel quel, ou HLS converti par ffmpeg sans réencodage. L'application la joue dans son propre lecteur façon Apple TV, dans sa page et non dans une iframe : titre et épisode, barre de progression, temps restant, sauts de 10 s, défilement accéléré en maintenant gauche ou droite, touches chiffres pour aller à 0 %, 10 %, … 90 %.
 
 Ces lecteurs passent en tête de liste. Si le NAS répond que la vidéo est indisponible, l'application passe au lecteur suivant. Si le NAS est injoignable, elle revient au lecteur intégré de l'hébergeur. Le réglage **Lecture via le NAS** permet de désactiver ce mode. Le serveur n'est pas dans ce dépôt : voir son propre README.
 
@@ -77,6 +77,8 @@ Sortie dans `app/data/` (ignoré par git) :
 - `anime/<slug>.json` : fiche complète avec saisons, langues, épisodes et lecteurs, chargée à la demande.
 
 Les entrées sans épisode lisible sont écartées, les artefacts du scraping sont nettoyés et les genres sont normalisés.
+
+Des animes absents de l'export peuvent être ajoutés à la main dans `tools/extras.json` (ignoré par git), sous la même forme qu'une entrée de `catalogue.json` : `slug`, `title`, `synopsis`, `genres`, `infos`, `poster`, `image`, `thumb` et `seasons` avec, par épisode, la liste des lecteurs `{ "player": "Vidmoly", "url": "https://…" }`. Un slug déjà présent dans l'export est remplacé. Les épisodes dont l'adresse n'est pas une URL valide sont ignorés.
 
 ### 2. Chiffrer avec un code PIN
 
